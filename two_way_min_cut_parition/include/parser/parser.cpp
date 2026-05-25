@@ -55,6 +55,8 @@ void Parser::readNet(const std::string &file_path, Input *input){
 	// read each line & create net
 	std::string line;
 	while(std::getline(file, line)){
+		if(line[0] != 'N')
+			std::cout << line << std::endl;
 		std::stringstream ss(line);
 
 		std::string name, _;
