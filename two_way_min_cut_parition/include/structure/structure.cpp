@@ -98,42 +98,9 @@ Cell* GainBucketList::getBestCell()
 
 // group structure
 Group::Group():
-	size(0), head(new Cell())
+	size(0)
 {
 }
-
-void Group::insert(Cell *cell)
-{
-	/*
-	 * insert cell to group
-	 */
-
-	cell->prev = head;
-	cell->next = head->next;
-
-	if(head->next)
-		head->next->prev = cell;
-
-	head->next = cell;
-};
-
-void Group::remove(Cell *cell)
-{
-	/*
-	 * remove cell from group
-	 */
-
-	Cell *prev = cell->prev;
-	Cell *next = cell->next;
-
-	if(prev)
-		prev->next = next;
-
-	if(next)
-		next->prev = prev;
-
-	cell->prev = cell->next = nullptr;
-};
 
 // input structure
 Input::Input():

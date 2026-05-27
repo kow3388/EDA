@@ -23,13 +23,11 @@ void FmAlgo::initialGroup()
 		// try make 2 groups cell size balance
 		if(group1->size > group2->size)
 		{
-			group2->insert(cell);
 			cell->group_id = 2;
 			group2->size += cell->size;
 		}
 		else
 		{
-			group1->insert(cell);
 			cell->group_id = 1;
 			group1->size += cell->size;
 		}
@@ -67,11 +65,14 @@ void FmAlgo::updateAllGain()
 			// situation gain will update
 			if(cell->group_id == 1 && net->group1_cnt == 1)
 				cell->gain++;
-			else if(cell->group_id == 1 && net->group2_cnt == 0)
+
+			if(cell->group_id == 1 && net->group2_cnt == 0)
 				cell->gain--;
-			else if(cell->group_id == 2 && net->group2_cnt == 1)
+
+			if(cell->group_id == 2 && net->group2_cnt == 1)
 				cell->gain++;
-			else if(cell->group_id == 2 && net->group1_cnt == 0)
+
+			if(cell->group_id == 2 && net->group1_cnt == 0)
 				cell->gain--;
 		}
 
@@ -88,18 +89,12 @@ void FmAlgo::updateCellGain(Cell *input_cell)
 
 	if(ori_group == 1)
 	{
-		group1->remove(input_cell);
 		group1->size -= input_cell->size;
-
-		group2->insert(input_cell);
 		group2->size += input_cell->size;
 	}
 	else
 	{
-		group2->remove(input_cell);
 		group2->size -= input_cell->size;
-
-		group1->insert(input_cell);
 		group1->size += input_cell->size;
 	}
 
@@ -163,6 +158,8 @@ int FmAlgo::iteration()
 	int cur_gain = 0, cur_steps = 0, best_gain = 0, best_steps = 0;
 	std::vector<Cell*> move_history;
 
+	int cut_size = getCutSize();
+
 	Cell *cur_cell;
 	while(cur_cell = bucket_list->getBestCell())
 	{
@@ -192,6 +189,7 @@ int FmAlgo::iteration()
 			best_gain = cur_gain;
 			best_steps = cur_steps;
 		}
+
 	}
 
 	// recover to best steps
@@ -200,7 +198,20 @@ int FmAlgo::iteration()
 		cur_cell = move_history.back();
 		move_history.pop_back();
 
-		updateCellGain(cur_cell);
+		int ori_group = cur_cell->group_id;
+		int new_group = ori_group == 1 ? 2 : 1;
+
+		if(ori_group == 1)
+			group1->size -= cur_cell->size;
+		else
+			group2->size -= cur_cell->size;
+
+		if(new_group == 1)
+			group1->size += cur_cell->size;
+		else
+			group2->size += cur_cell->size;
+
+		cur_cell->group_id = new_group;
 	}
 
 	return best_gain;
@@ -208,6 +219,8 @@ int FmAlgo::iteration()
 
 int FmAlgo::getCutSize()
 {
+	updateAllNet();
+
 	int cut = 0;
 	for(Net *net : input->nets)
 	{
@@ -236,8 +249,9 @@ void FmAlgo::solve()
 	while(true)
 	{
 		int best_gain = iteration();
+		cut_size = getCutSize();
 
-		std::cout << it_time << " run: best_gain = " << best_gain << std::endl;
+		std::cout << it_time << " run: best_gain = " << best_gain << ", cut size = " << cut_size << std::endl;
 		it_time++;
 
 		// do not improve stop it

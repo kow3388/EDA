@@ -46,11 +46,8 @@ struct GainBucketList{
 
 struct Group{
 	int size;
-	Cell *head;	// point to the cells list front
 
 	Group();
-	void insert(Cell *cell);
-	void remove(Cell *cell);
 };
 
 struct Input{

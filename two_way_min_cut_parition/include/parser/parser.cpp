@@ -52,23 +52,26 @@ void Parser::readNet(const std::string &file_path, Input *input){
 		return;
 	}
 
-	// read each line & create net
-	std::string line;
-	while(std::getline(file, line)){
-		if(line[0] != 'N')
-			std::cout << line << std::endl;
-		std::stringstream ss(line);
+	// Token-based parsing so a net can span multiple lines.
+	std::string tok;
+	while(file >> tok)
+	{
+		// get net name and _ get dummy token
+		std::string net_name, _;
+		file >> net_name >> _;
 
-		std::string name, _;
-		ss >> _  >> name >> _;
+		Net *net = new Net(net_name);
 
-		Net *net = new Net(name);
-		while(ss >> name){
-			// no more cell in current net
-			if(name == "}")
+		bool closed = false;
+		while(file >> tok)
+		{
+			if(tok == "}")
+			{
+				closed = true;
 				break;
+			}
 
-			Cell *cell = mp[name];
+			Cell *cell = mp[tok];
 			net->cells.push_back(cell);
 			cell->nets.push_back(net);
 		}

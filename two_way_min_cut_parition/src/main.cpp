@@ -32,14 +32,8 @@ int main(int argc, char** argv)
 	Parser parser;
 	Input *input = parser.parseInput(cell_file_path, net_file_path);
 
-	/*
-	for(Net *net : input->nets)
-		if(net->cells.size() == 1)
-			std::cout << net->name << std::endl;
-	*/
-
-	// FmAlgo *fm = new FmAlgo(input);
-	// fm->solve();
+	FmAlgo *fm = new FmAlgo(input);
+	fm->solve();
 	
 	return 0;
 };
