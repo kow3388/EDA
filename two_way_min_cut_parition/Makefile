@@ -9,9 +9,8 @@ DEP = $(OBJ:.o=.d)
 
 TARGET = main
 
-# Default testcase (override via: make run CELL=... NET=...)
-CELL ?= ./testcase/p2-1.cells
-NET  ?= ./testcase/p2-1.nets
+# Default empty
+CASE ?=
 
 $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) $(OBJ) -o $(TARGET)
@@ -25,7 +24,12 @@ $(BUILD_DIR)/%.o: %.cpp
 .PHONY: run clean
 
 run: $(TARGET)
-	./$(TARGET) $(CELL) $(NET)
+	ifeq($(strip $(CASE)),)
+		./$(TARGET)
+	else
+		./$(TARGET) $(CASE)
+	endif
 
 clean:
 	rm -rf $(TARGET) $(BUILD_DIR)
+	rm -rf ./output

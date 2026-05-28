@@ -4,6 +4,7 @@
 
 #pragma once
 #include "../structure/structure.hpp"
+#include "../writer/writer.hpp"
 
 class FmAlgo{
 private:
@@ -11,6 +12,7 @@ private:
 	Group *group1;
 	Group *group2;
 	GainBucketList *bucket_list;
+	Writer *writer;
 
 	void initialGroup();
 	void updateAllNet();
@@ -20,6 +22,5 @@ private:
 	int getCutSize();
 public:
 	FmAlgo(Input *input);
-	void solve();
-	void checkResult();
+	Writer* solve();
 };

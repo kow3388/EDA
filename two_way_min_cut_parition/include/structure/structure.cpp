@@ -58,7 +58,7 @@ void GainBucketList::insert(Cell *cell)
 		head->next->prev = cell;
 
 	head->next = cell;
-};
+}
 
 void GainBucketList::remove(Cell *cell)
 {
@@ -76,7 +76,7 @@ void GainBucketList::remove(Cell *cell)
 		next->prev = prev;
 
 	cell->prev = cell->next = nullptr;
-};
+}
 
 Cell* GainBucketList::getBestCell()
 {
@@ -94,7 +94,7 @@ Cell* GainBucketList::getBestCell()
 	}
 
 	return nullptr;
-};
+}
 
 // group structure
 Group::Group():

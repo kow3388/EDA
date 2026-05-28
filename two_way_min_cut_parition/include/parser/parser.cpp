@@ -3,6 +3,7 @@
 // Created: 2026-05-16
 
 #include "parser.hpp"
+#include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -14,7 +15,8 @@ std::unordered_map<std::string, Cell*> mp;
 Parser::Parser() {}
 
 // read cell file
-void Parser::readCell(const std::string &file_path, Input *input){
+void Parser::readCell(std::filesystem::path &file_path, Input *input)
+{
 	std::ifstream file(file_path);
 
 	if(!file.is_open()){
@@ -42,9 +44,10 @@ void Parser::readCell(const std::string &file_path, Input *input){
 	}
 
 	file.close();
-};
+}
 
-void Parser::readNet(const std::string &file_path, Input *input){
+void Parser::readNet(std::filesystem::path &file_path, Input *input)
+{
 	std::ifstream file(file_path);
 
 	if(!file.is_open()){
@@ -80,9 +83,10 @@ void Parser::readNet(const std::string &file_path, Input *input){
 	}
 
 	file.close();
-};
+}
 
-Input* Parser::parseInput(const std::string &cell_path, const std::string &net_path){
+Input* Parser::parseInput(std::filesystem::path &cell_path, std::filesystem::path &net_path)
+{
 	Input *input = new Input();
 
 	readCell(cell_path, input);
@@ -96,4 +100,4 @@ Input* Parser::parseInput(const std::string &cell_path, const std::string &net_p
 		input->max_degree = std::max(input->max_degree, static_cast<int>(cell->nets.size()));
 
 	return input;
-};
+}

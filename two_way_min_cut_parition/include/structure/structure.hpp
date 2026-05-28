@@ -9,7 +9,8 @@
 
 struct Net;
 
-struct Cell{
+struct Cell
+{
 	std::vector<Net*> nets;
 	std::string name;
 	int size;
@@ -23,7 +24,8 @@ struct Cell{
 	Cell(std::string name, int cell_size);
 };
 
-struct Net{
+struct Net
+{
 	std::vector<Cell*> cells;
 	std::string name;
 	int group1_cnt;
@@ -33,7 +35,8 @@ struct Net{
 	Net(std::string name);
 };
 
-struct GainBucketList{
+struct GainBucketList
+{
 	int max_gain;
 	std::unordered_map<int, Cell*> gain2cells;
 
@@ -44,13 +47,15 @@ struct GainBucketList{
 	Cell* getBestCell();
 };
 
-struct Group{
+struct Group
+{
 	int size;
 
 	Group();
 };
 
-struct Input{
+struct Input
+{
 	std::vector<Cell*> cells;
 	std::vector<Net*> nets;
 	int max_degree;

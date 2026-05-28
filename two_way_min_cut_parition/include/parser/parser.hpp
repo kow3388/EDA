@@ -4,14 +4,15 @@
 
 #pragma once
 #include "../structure/structure.hpp"
-#include <string>
+#include <filesystem>
 
 // parse input file to get all cell & net
-class Parser{
+class Parser
+{
 private:
-	void readCell(const std::string &file_path, Input *input);
-	void readNet(const std::string &file_path, Input *input);
+	void readCell(std::filesystem::path &file_path, Input *input);
+	void readNet(std::filesystem::path &file_path, Input *input);
 public:
 	Parser();
-	Input* parseInput(const std::string &cell_path, const std::string &net_path);
+	Input* parseInput(std::filesystem::path &cell_path, std::filesystem::path &net_path);
 };

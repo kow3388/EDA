@@ -13,7 +13,8 @@ FmAlgo::FmAlgo(Input *input)
 	this->group1 = new Group();
 	this->group2 = new Group();
 	this->bucket_list = new GainBucketList(this->input->max_degree);
-};
+	this->writer = new Writer();
+}
 
 void FmAlgo::initialGroup()
 {
@@ -32,7 +33,7 @@ void FmAlgo::initialGroup()
 			group1->size += cell->size;
 		}
 	}
-};
+}
 
 void FmAlgo::updateAllNet()
 {
@@ -49,7 +50,7 @@ void FmAlgo::updateAllNet()
 				net->group2_cnt++;
 		}
 	}
-};
+}
 
 void FmAlgo::updateAllGain()
 {
@@ -78,7 +79,7 @@ void FmAlgo::updateAllGain()
 
 		bucket_list->insert(cell);
 	}
-};
+}
 
 void FmAlgo::updateCellGain(Cell *input_cell)
 {
@@ -147,7 +148,7 @@ void FmAlgo::updateCellGain(Cell *input_cell)
 			}
 		}
 	}
-};
+}
 
 int FmAlgo::iteration()
 {
@@ -215,7 +216,7 @@ int FmAlgo::iteration()
 	}
 
 	return best_gain;
-};
+}
 
 int FmAlgo::getCutSize()
 {
@@ -229,9 +230,9 @@ int FmAlgo::getCutSize()
 	}
 
 	return cut;
-};
+}
 
-void FmAlgo::solve()
+Writer* FmAlgo::solve()
 {
 	// initial group first
 	std::cout << "Start initial group" << std::endl;
@@ -249,9 +250,8 @@ void FmAlgo::solve()
 	while(true)
 	{
 		int best_gain = iteration();
-		cut_size = getCutSize();
 
-		std::cout << it_time << " run: best_gain = " << best_gain << ", cut size = " << cut_size << std::endl;
+		std::cout << it_time << " run: best_gain = " << best_gain << std::endl;
 		it_time++;
 
 		// do not improve stop it
@@ -266,37 +266,11 @@ void FmAlgo::solve()
 			break;
 		}
 	}
-};
 
-void FmAlgo::checkResult()
-{
-	int group1_size = 0, group2_size = 0;
+	// create writer
+	writer->setCutSize(cut_size);
 	for(Cell *cell : input->cells)
-	{
-		if(cell->group_id == 1)
-			group1_size += cell->size;
-		else
-			group2_size += cell->size;
-	}
+		writer->addCell(cell);
 
-	std::cout << "group1 size: " << group1_size << ", " << "group2 size: " << group2_size << std::endl;
-
-	int cut_size = 0;
-	for(Net *net : input->nets)
-	{
-		int group1_cnt = 0;
-		int group2_cnt = 0;
-		for(Cell *cell : net->cells)
-		{
-			if(cell->group_id == 1)
-				group1_cnt++;
-			else
-				group2_cnt++;
-		}
-
-		if(group1_cnt != 0 && group2_cnt != 0)
-			cut_size++;
-	}
-
-	std::cout << "Cut size: " << cut_size << std::endl;
-};
+	return writer;
+}

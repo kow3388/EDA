@@ -5,35 +5,42 @@
 #include "../include/parser/parser.hpp"
 #include "../include/structure/structure.hpp"
 #include "../include/algo/algo.hpp"
-#include <string>
+#include "../include/writer/writer.hpp"
+#include <filesystem>
 #include <iostream>
 
 int main(int argc, char** argv)
 {
 	// read filename from command
-	std::string cell_file_path = "";
-	std::string net_file_path = "";
-	if(argc == 3)
-	{
-		cell_file_path = argv[1];
-		net_file_path = argv[2];
-	}
-	else if(argc == 1)
-	{
-		cell_file_path = "./testcase/p2-1.cells";
-		net_file_path = "./testcase/p2-1.nets";
-	}
+	std::filesystem::path input_dir = "testcase";
+	std::filesystem::path cell_file_path = "";
+	std::filesystem::path net_file_path = "";
+	std::filesystem::path file_name = "";
+	if(argc == 1)
+		file_name = "p2-1";
+	else if(argc == 2)
+		std::filesystem::path file_name = argv[1];
 	else
 	{
-		std::cout << "Usage: ./main <file.cells> <file.nets>" << std::endl;
+		std::cout << "Usage: make run" << std::endl;
+		std::cout << "Usage: ./main" << std::endl;
+		std::cout << "Usage: ./main <file name>" << std::endl;
 		return 1;
 	}
+
+	cell_file_path = input_dir / file_name;
+	net_file_path = input_dir / file_name;
+
+	cell_file_path += ".cells";
+	net_file_path += ".nets";
 
 	Parser parser;
 	Input *input = parser.parseInput(cell_file_path, net_file_path);
 
 	FmAlgo *fm = new FmAlgo(input);
-	fm->solve();
+	Writer *writer = fm->solve();
+
+	writer->writeResult(file_name);
 	
 	return 0;
 };
