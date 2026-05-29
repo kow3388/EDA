@@ -47,9 +47,9 @@ void GainBucketList::insert(Cell *cell)
 
 	// current gain first initial (create dummy cell for head)
 	if(!gain2cells[cell->gain])
-		gain2cells[cell->gain] = new Cell();
+		gain2cells[cell->gain] = std::make_unique<Cell>();
 
-	Cell *head = gain2cells[cell->gain];
+	Cell *head = gain2cells[cell->gain].get();
 
 	cell->prev = head;
 	cell->next = head->next;
@@ -87,10 +87,11 @@ Cell* GainBucketList::getBestCell()
 	for(int g = max_gain; g >= -max_gain; g--)
 	{
 		// no cell in current gain
-		if(!gain2cells[g] || !gain2cells[g]->next)
+		auto it = gain2cells.find(g);
+		if(it == gain2cells.end() || !it->second || !it->second->next)
 			continue;
 
-		return gain2cells[g]->next;
+		return it->second->next;
 	}
 
 	return nullptr;

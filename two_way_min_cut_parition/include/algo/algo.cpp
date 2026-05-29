@@ -6,20 +6,19 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
+#include <memory>
 
 FmAlgo::FmAlgo(Input *input)
 {
 	this->input = input;
-	this->group1 = new Group();
-	this->group2 = new Group();
-	this->bucket_list = new GainBucketList(this->input->max_degree);
-	this->writer = new Writer();
+	this->group1 = std::make_unique<Group>();
+	this->group2 = std::make_unique<Group>();
+	this->bucket_list = std::make_unique<GainBucketList>(input->max_degree);
 }
 
 void FmAlgo::initialGroup()
 {
-	std::vector<Cell*> cells = input->cells;
-	for(Cell* cell : cells)
+	for(Cell::ptr &cell : input->cells)
 	{
 		// try make 2 groups cell size balance
 		if(group1->size > group2->size)
@@ -38,7 +37,7 @@ void FmAlgo::initialGroup()
 void FmAlgo::updateAllNet()
 {
 	// update each net group cnt
-	for(Net* net : input->nets)
+	for(auto &net : input->nets)
 	{
 		net->group1_cnt = 0;
 		net->group2_cnt = 0;
@@ -54,11 +53,11 @@ void FmAlgo::updateAllNet()
 
 void FmAlgo::updateAllGain()
 {
-	for(Cell* cell : input->cells)
+	for(auto &cell : input->cells)
 	{
 		cell->lock = false;
 
-		bucket_list->remove(cell);
+		bucket_list->remove(cell.get());
 		cell->gain = 0;
 
 		for(Net* net : cell->nets)
@@ -77,7 +76,7 @@ void FmAlgo::updateAllGain()
 				cell->gain--;
 		}
 
-		bucket_list->insert(cell);
+		bucket_list->insert(cell.get());
 	}
 }
 
@@ -110,7 +109,7 @@ void FmAlgo::updateCellGain(Cell *input_cell)
 		// before update
 		for(Cell *cell : net->cells)
 		{
-			if(!cell->lock && cell != input_cell)
+			if(!cell->lock)
 			{
 				bucket_list->remove(cell);
 
@@ -137,7 +136,7 @@ void FmAlgo::updateCellGain(Cell *input_cell)
 		// after update
 		for(Cell *cell : net->cells)
 		{
-			if(!cell->lock && cell != input_cell)
+			if(!cell->lock)
 			{
 				if(from == 0)
 					cell->gain--;
@@ -223,7 +222,7 @@ int FmAlgo::getCutSize()
 	updateAllNet();
 
 	int cut = 0;
-	for(Net *net : input->nets)
+	for(auto &net : input->nets)
 	{
 		if(net->group1_cnt != 0 && net->group2_cnt != 0)
 			cut++;
@@ -232,7 +231,7 @@ int FmAlgo::getCutSize()
 	return cut;
 }
 
-Writer* FmAlgo::solve()
+Writer::ptr FmAlgo::solve()
 {
 	// initial group first
 	std::cout << "Start initial group" << std::endl;
@@ -268,9 +267,11 @@ Writer* FmAlgo::solve()
 	}
 
 	// create writer
+	Writer::ptr writer = std::make_unique<Writer>();
+
 	writer->setCutSize(cut_size);
-	for(Cell *cell : input->cells)
-		writer->addCell(cell);
+	for(auto &cell : input->cells)
+		writer->addCell(cell.get());
 
 	return writer;
 }

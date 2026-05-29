@@ -6,19 +6,23 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <memory>
 
 struct Net;
 
 struct Cell
 {
+	// alias for cell smart pointer
+	using ptr = std::unique_ptr<Cell>;
+
 	std::vector<Net*> nets;
 	std::string name;
 	int size;
 	int gain;
 	bool lock;
 	int group_id;
-	Cell *next;	// for gain bucketlist
-	Cell *prev;	// for gain bucketlist
+	Cell *next;	// for gain bucketlist (non-owning)
+	Cell *prev;	// for gain bucketlist (non-owning)
 
 	Cell();
 	Cell(std::string name, int cell_size);
@@ -26,6 +30,9 @@ struct Cell
 
 struct Net
 {
+	// alias for net smart pointer
+	using ptr = std::unique_ptr<Net>;
+
 	std::vector<Cell*> cells;
 	std::string name;
 	int group1_cnt;
@@ -37,8 +44,12 @@ struct Net
 
 struct GainBucketList
 {
+	// alias for GainBucketList smart pointer
+	using ptr = std::unique_ptr<GainBucketList>;
+
 	int max_gain;
-	std::unordered_map<int, Cell*> gain2cells;
+	// Dummy heads are owned here. The cells inserted are non-owning.
+	std::unordered_map<int, Cell::ptr> gain2cells;
 
 	GainBucketList();
 	GainBucketList(int max_gain);
@@ -49,6 +60,9 @@ struct GainBucketList
 
 struct Group
 {
+	// alias for group smart pointer
+	using ptr = std::unique_ptr<Group>;
+
 	int size;
 
 	Group();
@@ -56,8 +70,11 @@ struct Group
 
 struct Input
 {
-	std::vector<Cell*> cells;
-	std::vector<Net*> nets;
+	// alias for input smart pointer
+	using ptr = std::unique_ptr<Input>;
+
+	std::vector<Cell::ptr> cells;
+	std::vector<Net::ptr> nets;
 	int max_degree;
 	double diff_spec;
 

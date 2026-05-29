@@ -8,6 +8,8 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_map>
+#include <memory>
+#include <utility>
 
 // <cell name, cell>
 std::unordered_map<std::string, Cell*> mp;
@@ -33,11 +35,11 @@ void Parser::readCell(std::filesystem::path &file_path, Input *input)
 		int size = 0;
 
 		ss >> name >> size;
-		Cell *cell = new Cell(name, size);
-		input->cells.push_back(cell);
+		Cell::ptr cell = std::make_unique<Cell>(name, size);
+		input->cells.push_back(std::move(cell));
 
 		// record in hashtable to quickly find cell for net
-		mp[name] = cell;
+		mp[name] = input->cells.back().get();
 
 		// calculate cell size diff spec
 		input->diff_spec += static_cast<double>(size);
@@ -63,7 +65,7 @@ void Parser::readNet(std::filesystem::path &file_path, Input *input)
 		std::string net_name, _;
 		file >> net_name >> _;
 
-		Net *net = new Net(net_name);
+		Net::ptr net = std::make_unique<Net>(net_name);
 
 		bool closed = false;
 		while(file >> tok)
@@ -76,27 +78,27 @@ void Parser::readNet(std::filesystem::path &file_path, Input *input)
 
 			Cell *cell = mp[tok];
 			net->cells.push_back(cell);
-			cell->nets.push_back(net);
+			cell->nets.push_back(net.get());
 		}
 
-		input->nets.push_back(net);
+		input->nets.push_back(std::move(net));
 	}
 
 	file.close();
 }
 
-Input* Parser::parseInput(std::filesystem::path &cell_path, std::filesystem::path &net_path)
+Input::ptr Parser::parseInput(std::filesystem::path &cell_path, std::filesystem::path &net_path)
 {
-	Input *input = new Input();
+	Input::ptr input = std::make_unique<Input>();
 
-	readCell(cell_path, input);
-	readNet(net_path, input);
+	readCell(cell_path, input.get());
+	readNet(net_path, input.get());
 
 	// cacluate legal spec
 	input->diff_spec /= 10;
 
 	// calculate max degree of all cell
-	for(Cell *cell : input->cells)
+	for(auto &cell : input->cells)
 		input->max_degree = std::max(input->max_degree, static_cast<int>(cell->nets.size()));
 
 	return input;

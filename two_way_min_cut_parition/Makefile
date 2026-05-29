@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Werror -Iinclude -MMD -MP
+CXXFLAGS = -std=c++17 -O2 -Werror -Iinclude -MMD -MP
 
 BUILD_DIR = build
 

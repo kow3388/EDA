@@ -8,6 +8,7 @@
 #include "../include/writer/writer.hpp"
 #include <filesystem>
 #include <iostream>
+#include <memory>
 
 int main(int argc, char** argv)
 {
@@ -19,7 +20,7 @@ int main(int argc, char** argv)
 	if(argc == 1)
 		file_name = "p2-1";
 	else if(argc == 2)
-		std::filesystem::path file_name = argv[1];
+		file_name = argv[1];
 	else
 	{
 		std::cout << "Usage: make run" << std::endl;
@@ -35,10 +36,10 @@ int main(int argc, char** argv)
 	net_file_path += ".nets";
 
 	Parser parser;
-	Input *input = parser.parseInput(cell_file_path, net_file_path);
+	Input::ptr input = parser.parseInput(cell_file_path, net_file_path);
 
-	FmAlgo *fm = new FmAlgo(input);
-	Writer *writer = fm->solve();
+	FmAlgo fm(input.get());
+	Writer::ptr writer = fm.solve();
 
 	writer->writeResult(file_name);
 	

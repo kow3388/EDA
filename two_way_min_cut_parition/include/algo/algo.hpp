@@ -9,10 +9,9 @@
 class FmAlgo{
 private:
 	Input *input;
-	Group *group1;
-	Group *group2;
-	GainBucketList *bucket_list;
-	Writer *writer;
+	Group::ptr group1;
+	Group::ptr group2;
+	GainBucketList::ptr bucket_list;
 
 	void initialGroup();
 	void updateAllNet();
@@ -22,5 +21,5 @@ private:
 	int getCutSize();
 public:
 	FmAlgo(Input *input);
-	Writer* solve();
+	Writer::ptr solve();
 };

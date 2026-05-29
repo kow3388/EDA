@@ -14,5 +14,5 @@ private:
 	void readNet(std::filesystem::path &file_path, Input *input);
 public:
 	Parser();
-	Input* parseInput(std::filesystem::path &cell_path, std::filesystem::path &net_path);
+	Input::ptr parseInput(std::filesystem::path &cell_path, std::filesystem::path &net_path);
 };

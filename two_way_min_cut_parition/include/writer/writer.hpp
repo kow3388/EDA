@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <memory>
 
 class Writer
 {
@@ -14,6 +15,8 @@ private:
 	int cut_size;
 	std::vector<std::vector<std::string>> groups;
 public:
+	using ptr = std::unique_ptr<Writer>;
+
 	Writer();
 	void setCutSize(int cut_size);
 	void addCell(Cell *ipnut_cell);
