@@ -9,9 +9,10 @@
 class FmAlgo{
 private:
 	Input *input;
-	Group::ptr group1;
-	Group::ptr group2;
 	GainBucketList::ptr bucket_list;
+	int group1_size;
+	int group2_size;
+	int epochs;
 
 	void initialGroup();
 	void updateAllNet();

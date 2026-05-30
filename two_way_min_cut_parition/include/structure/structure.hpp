@@ -58,16 +58,6 @@ struct GainBucketList
 	Cell* getBestCell();
 };
 
-struct Group
-{
-	// alias for group smart pointer
-	using ptr = std::unique_ptr<Group>;
-
-	int size;
-
-	Group();
-};
-
 struct Input
 {
 	// alias for input smart pointer

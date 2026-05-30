@@ -97,12 +97,6 @@ Cell* GainBucketList::getBestCell()
 	return nullptr;
 }
 
-// group structure
-Group::Group():
-	size(0)
-{
-}
-
 // input structure
 Input::Input():
 	max_degree(0), diff_spec(0.0)

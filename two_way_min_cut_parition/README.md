@@ -2,6 +2,7 @@
 使用 Fiduccia–Mattheyses (FM) 演算法實作的 Two-Way Min-Cut Partition。目標是在滿足兩群大小平衡限制下，最小化跨越兩群的 nets 數量（cut size）。  
 
 > sepc可參考CS613500_HW2_spec.pdf  
+
 ## 使用說明 (Usage)
 
 ### 1. 編譯
@@ -62,19 +63,19 @@ B <count>
 make clean
 ```
 
-# 專案來源
+## 專案來源
 來自NTHU CS Physical Design Automation 助教的Github (連結如下)  
 [NTHU CS Physical Design Automation Github](https://github.com/EricLu1218/Physical_Design_Automation/tree/main)  
 
-## NTHU CS Physical Design Automation 助教提供的function
-### 1. Testcase生成
+### NTHU CS Physical Design Automation 助教提供的function
+#### 1. Testcase生成
 可利用testcase資料夾的genTestcase.rb來生成testcase，使用方法如下  
 ```
 # ruby v1.9.3
 Usage: ruby genTestcase.rb <filename> <#cells> <maxCellSize> <#nets> <maxDegree>
 ```
 
-### 2. Output格式驗證
+#### 2. Output格式驗證
 可利用verifier資料夾內的verify檔案來驗證，使用方法如下  
 ```
 Usage ./verifier/verify <testcase.nets> <testcase.cells> <testcase.out>

@@ -4,32 +4,55 @@
 
 #include "algo.hpp"
 #include <vector>
+#include <string>
 #include <cmath>
 #include <iostream>
 #include <memory>
+#include <random>
+#include <algorithm>
+#include <unordered_map>
+#include <climits>
 
 FmAlgo::FmAlgo(Input *input)
 {
 	this->input = input;
-	this->group1 = std::make_unique<Group>();
-	this->group2 = std::make_unique<Group>();
 	this->bucket_list = std::make_unique<GainBucketList>(input->max_degree);
+
+	group1_size = 0;
+	group2_size = 0;
+
+	// run how many time FM algo
+	epochs = 5;
 }
 
 void FmAlgo::initialGroup()
 {
+	// make 2 group size 0 first
+	group1_size = group2_size = 0;
+
+	/*
+	 * for debug, fix random seed
+	 * int seed = 0;
+	 * std::mt19937 rng(seed);
+	 */ 
+
+	// get rng (shuffle for initial group)
+	std::random_device rd;
+	std::mt19937 rng(rd());
+	std::shuffle(input->cells.begin(), input->cells.end(), rng);
+
 	for(Cell::ptr &cell : input->cells)
 	{
 		// try make 2 groups cell size balance
-		if(group1->size > group2->size)
+		if(group1_size > group2_size)
 		{
 			cell->group_id = 2;
-			group2->size += cell->size;
+			group2_size += cell->size;
 		}
 		else
 		{
 			cell->group_id = 1;
-			group1->size += cell->size;
+			group1_size += cell->size;
 		}
 	}
 }
@@ -89,13 +112,13 @@ void FmAlgo::updateCellGain(Cell *input_cell)
 
 	if(ori_group == 1)
 	{
-		group1->size -= input_cell->size;
-		group2->size += input_cell->size;
+		group1_size -= input_cell->size;
+		group2_size += input_cell->size;
 	}
 	else
 	{
-		group2->size -= input_cell->size;
-		group1->size += input_cell->size;
+		group2_size -= input_cell->size;
+		group1_size += input_cell->size;
 	}
 
 	bucket_list->remove(input_cell);
@@ -166,9 +189,9 @@ int FmAlgo::iteration()
 		// check can move or not
 		int group_size_diff = 0;
 		if(cur_cell->group_id == 1)
-			group_size_diff = std::abs((group1->size - group2->size) - 2*cur_cell->size);
+			group_size_diff = std::abs((group1_size - group2_size) - 2*cur_cell->size);
 		else
-			group_size_diff = std::abs((group2->size - group1->size) - 2*cur_cell->size);
+			group_size_diff = std::abs((group2_size - group1_size) - 2*cur_cell->size);
 
 		// move will be illegal, terminate current itteration
 		if(group_size_diff >= input->diff_spec)
@@ -202,14 +225,14 @@ int FmAlgo::iteration()
 		int new_group = ori_group == 1 ? 2 : 1;
 
 		if(ori_group == 1)
-			group1->size -= cur_cell->size;
+			group1_size -= cur_cell->size;
 		else
-			group2->size -= cur_cell->size;
+			group2_size -= cur_cell->size;
 
 		if(new_group == 1)
-			group1->size += cur_cell->size;
+			group1_size += cur_cell->size;
 		else
-			group2->size += cur_cell->size;
+			group2_size += cur_cell->size;
 
 		cur_cell->group_id = new_group;
 	}
@@ -233,43 +256,66 @@ int FmAlgo::getCutSize()
 
 Writer::ptr FmAlgo::solve()
 {
-	// initial group first
-	std::cout << "Start initial group" << std::endl;
-	initialGroup();
-	std::cout << "Finish initial group" << std::endl;
+	// record best result
+	int best_cut_size = INT_MAX;
+	std::unordered_map<std::string, int> best_mp;
 
-	int it_time = 0, cut_size = 0;
-
-	updateAllNet();
-	cut_size = getCutSize();
-	std::cout << "Original cut size = " << cut_size << std::endl;
-
-	std::cout << "======= Start iterative ========" << std::endl;
-
-	while(true)
+	for(int i = 0; i < epochs; i++)
 	{
-		int best_gain = iteration();
+		std::cout << "========== " << i << "'s epochs ==========" << std::endl;
+		std::cout << "Start FM Algo" << std::endl;
 
-		std::cout << it_time << " run: best_gain = " << best_gain << std::endl;
-		it_time++;
+		int it_time = 0, cut_size = 0;
 
-		// do not improve stop it
-		if(best_gain == 0)
+		// initial
+		initialGroup();
+		updateAllNet();
+		cut_size = getCutSize();
+		std::cout << "Original cut size = " << cut_size << std::endl;
+
+		while(true)
 		{
-			std::cout << "================================" << std::endl;
-			std::cout << "Do not improve anymore, stop it!" << std::endl;
+			int best_gain = iteration();
 
-			cut_size = getCutSize();
+			std::cout << it_time << " run: best_gain = " << best_gain << std::endl;
+			it_time++;
 
-			std::cout << "Final cut size = " << cut_size << std::endl;
-			break;
+			// do not improve stop it
+			if(best_gain == 0)
+			{
+				std::cout << "Do not improve anymore, stop it!" << std::endl;
+
+				cut_size = getCutSize();
+
+				std::cout << i << "'s epoch final cut size = " << cut_size << std::endl;
+
+				if(cut_size < best_cut_size)
+				{
+					std::cout << "Get better result, save" << std::endl;
+
+					best_cut_size = cut_size;
+					for(auto &cell : input->cells)
+						best_mp[cell->name] = cell->group_id;
+
+				}
+
+				break;
+			}
 		}
 	}
+
+	std::cout << "================================" << std::endl;
+	std::cout << "Best cut size = " << best_cut_size << std::endl;
 
 	// create writer
 	Writer::ptr writer = std::make_unique<Writer>();
 
-	writer->setCutSize(cut_size);
+	writer->setCutSize(best_cut_size);
+	for(auto &cell : input->cells)
+		cell->group_id = best_mp[cell->name];
+	
+	updateAllNet();
+
 	for(auto &cell : input->cells)
 		writer->addCell(cell.get());
 
