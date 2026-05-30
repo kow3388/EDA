@@ -9,6 +9,9 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <chrono>
+
+using time_clock = std::chrono::steady_clock;
 
 int main(int argc, char** argv)
 {
@@ -35,13 +38,30 @@ int main(int argc, char** argv)
 	cell_file_path += ".cells";
 	net_file_path += ".nets";
 
+	auto t0 = time_clock::now();
+
 	Parser parser;
 	Input::ptr input = parser.parseInput(cell_file_path, net_file_path);
+
+	auto t1 = time_clock::now();
 
 	FmAlgo fm(input.get());
 	Writer::ptr writer = fm.solve();
 
+	auto t2 = time_clock::now();
+
 	writer->writeResult(file_name);
+
+	auto t3 = time_clock::now();
+	
+	auto ms = [](auto d){
+		return std::chrono::duration<double, std::milli>(d).count();
+	};
+
+	std::cout << "--------------------------------" << std::endl;
+	std::cout << "Input time consume: " << ms(t1 - t0) << std::endl;
+	std::cout << "Algo time consume: " << ms(t2 - t1) << std::endl;
+	std::cout << "Output time consume: " << ms(t3 - t2) << std::endl;
 	
 	return 0;
 };
