@@ -103,17 +103,50 @@ Normalize Polish Expression (NPE): polish epxression當中沒有連續相同type
 ### Properties (Soft blocks)  
 因為hard blocks的長寬都是已經固定的，因此我們在計算cost時，不需要在額外考慮其他東西  
 但是soft blocks是area固定，長寬不固定，因此這個soft block的長寬畫在平面上會是一個曲線，如下圖  
-![soft block curve]()  
+![soft block curve](./img/soft_block_curve.png)  
 
 但是實際上在layout上會有一些極限，不可能說讓長非常短或是寬非常短，因此實際上的legal shape會被bound住  
-![soft block bound]()  
+![soft block bound](./img/soft_block_bound.png)  
 
 除了無法有非常短的長或寬外，我們的長寬也不會是continuously的，會是discrete的，且cell是死板的，它通常只能rotate或是mirrored，因此實際上的legal shape會是一個階梯形狀  
-![soft block stair]()  
+![soft block stair](./img/soft_block_stair.png)  
 
 因次在做soft block的Wong-Liu algo時  
 1. 每次move的time complexity為$O(n * k^{2})$，k是可接受的長或寬保留點  
 
 2. Total time complexity為$O(m * n * k^{2})$  
 
-## Wheel Floorplan
+## Non-slicing floorplan
+### Wheel gloorplan
+當floorplan是non-slicing的話，最簡單的non-slicing的flooplan結構是wheel (or spiral)  
+這種wheel (sprial) floorplan可以用order-5 floorplan表示，意思是可以把這種結構切分成5份，如下圖  
+
+![order-5 floorplan](./img/order_5_floorplan.png)  
+
+### Polar graph
+Polar graph是一種general的floorplan表示法 (不像polish expression只能表示slicing floorplan)  
+它會將一個floorplan拆解成兩個graph，分別是vertical polar graph和horizontal polar graph  
+
+這兩個graph中每一個node都是一個floorplan的切邊，而graph中的edge則是module  
+有這兩個graph可以表示每個module的相對關係，除此之外longest path就是這個floorplan desing的長和寬  
+
+![polar graph](./img/polar_graph.png)  
+
+### B\* tree  
+B\* tree是一種compact non-slicing floorplan的表示法  
+這個資料結構有以下特點  
+1. 會先將non-slicing floorplan做compact，每個block盡可能的往左往下去壓縮  
+
+2. 從最左下角的block去建構tree  
+
+3. Left child是parent右方的block  
+
+4. Right child是parent上方的block  
+
+5. Packing很快  
+
+![b\* tree](./img/b_star_tree.png)  
+
+> Packing是指說將拓樸表示轉換成實際幾何版圖，例如座標, 長寬, 面積等等  
+
+> 要記得此資料結構是一個tree，若有一個block是一個block的上方，也剛好是令一個block的右方，此時只須選擇一種去construct tree即可，否則會破壞這個tree的結構  
