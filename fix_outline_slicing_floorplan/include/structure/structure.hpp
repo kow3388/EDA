@@ -18,6 +18,7 @@ struct Block
 	int width;
 	int height;
 	double score;	// for initial sorting
+	bool rotate;
 
 	Block();
 	Block(std::string name, std::pair<int, int> bottom_left, int width, int height);
@@ -44,6 +45,7 @@ struct Net
 	std::vector<Pin*> pins;
 
 	Net();
+	int getWL();
 };
 
 struct Input
@@ -61,7 +63,23 @@ struct Input
 	void sortBlock();
 };
 
-enum class Type {H_CUT, V_CUT, BLOCK};
+enum class Type
+{
+	H_CUT = -2,
+	V_CUT = -1,
+       	BLOCK = 0
+};
+
+struct Record
+{
+	int width;
+	int height;
+	int l_choice;
+	int r_choice;
+
+	Record();
+	Record(int width, int hegiht);
+}
 
 struct Node
 {
@@ -70,7 +88,10 @@ struct Node
 
 	Type type;
 	Block *block;
-	bool rotate;
+	Node *left;
+	Node *right;
+	std::vector<Record>;
 
 	Node();
+	void update();
 };

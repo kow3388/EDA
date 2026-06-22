@@ -79,9 +79,6 @@ void Parser::readBlock(const Path &file_path, Input *input)
 		std::pair<int, int> bottom_left = {X[0], Y[0]};
 		Block::ptr block = std::make_unique<Block>(name, bottom_left, width, height);
 
-		// add area to score
-		block->score += width * height;
-
 		// move pointer in block
 		input->blocks.push_back(std::move(block));
 		input->block_area += width * height;
