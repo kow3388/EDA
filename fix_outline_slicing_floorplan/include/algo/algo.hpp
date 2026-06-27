@@ -3,10 +3,10 @@
 // Created: 2026-06-13
 
 #pragma once
-#include "../include/structure/structure.hpp"
+#include "../structure/structure.hpp"
+#include "../writer/writer.hpp"
 #include <tuple>
 #include <vector>
-#include <utility>
 
 class WongLuiAlgo
 {
@@ -18,19 +18,20 @@ private:
 	int weight;	// for initial penalty weight
 	
 	std::vector<int> initialNPE();
-	std::vector<int> perturb(std::vector<int> expr, int type);
-	bool isValid(std::vector<int> expr);	// is expr NPE
+	bool isValid(std::vector<int> &expr);	// is expr NPE
 	
-	Node* buildTree(std::vector<int> expr);
+	Node* buildTree(std::vector<int> &expr);
 	void setCoordinate(Node *root, int choice, int x, int y);
 
-	std::vector<int> getCost(std::vector<int> expr, bool wl_optimize);
+	std::vector<int> getCost(std::vector<int> &expr, bool wl_optimize);
+	std::vector<int> perturb(std::vector<int> &expr, int move_type);
 	std::tuple<std::vector<int>, int, int> SA(std::vector<int> expr,
 					    	  double init_temperature,
 						  double end_temperature,
 						  double cool_factor,
+						  int max_try,
 						  bool wl_optimize);
 public:
 	WongLuiAlgo(Input *input);
-	void run();
+	Writer::ptr solve();
 };

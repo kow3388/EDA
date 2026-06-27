@@ -78,8 +78,9 @@ struct Record
 	int r_choice;
 
 	Record();
-	Record(int width, int hegiht);
-}
+	Record(int width, int height);
+	Record(int width, int height, int l_choice, int r_choice);
+};
 
 struct Node
 {
@@ -90,7 +91,7 @@ struct Node
 	Block *block;
 	Node *left;
 	Node *right;
-	std::vector<Record>;
+	std::vector<Record> records;
 
 	Node();
 	void update();

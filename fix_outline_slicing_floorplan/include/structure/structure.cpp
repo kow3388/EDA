@@ -21,7 +21,7 @@ Block::Block(std::string name, std::pair<int, int> bottom_left, int width, int h
 
 // pin struct
 Pin::Pin():
-	name(name), point(0,0)
+	name(""), point(0,0)
 {
 }
 
@@ -41,8 +41,8 @@ int Net::getWL()
 
 	for(Pin *pin : pins)
 	{
-		int x = pins->bottom_left.first;
-		int y = pins->bottom_left.second;
+		int x = pin->point.first;
+		int y = pin->point.second;
 
 		min_x = std::min(min_x, x);
 		min_y = std::min(min_y, y);
@@ -53,8 +53,8 @@ int Net::getWL()
 
 	for(Block *block : blocks)
 	{
-		int x = blocks->bottom_left.first;
-		int y = blocks->bottom_left.second;
+		int x = block->bottom_left.first;
+		int y = block->bottom_left.second;
 
 		if(block->rotate)
 		{
@@ -89,7 +89,7 @@ void Input::sortBlock()
 		  blocks.end(),
 		  [](Block::ptr &a, Block::ptr &b)
 		  {
-		  	if(max(a->width, a->height) > max(b->width, b->hegiht))
+		  	if(std::max(a->width, a->height) > std::max(b->width, b->height))
 				return true;
 			else
 				return a->score > b->score;
@@ -153,7 +153,7 @@ void Node::update()
 			Record l_child = l_records[l];
 			Record r_child = r_records[r];
 
-			records.push_back(Record(max(l_child.width, r_child.width),
+			records.push_back(Record(std::max(l_child.width, r_child.width),
 					  	 l_child.height + r_child.height,
 					  	 l,
 					  	 r));
@@ -182,7 +182,7 @@ void Node::update()
 			Record r_child = r_records[r];
 
 			records.push_back(Record(l_child.width + r_child.width,
-					  	 max(l_child.height, r_child.height),
+					  	 std::max(l_child.height, r_child.height),
 					  	 l,
 					  	 r));
 

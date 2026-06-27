@@ -5,6 +5,7 @@
 #include "../include/parser/parser.hpp"
 #include "../include/structure/structure.hpp"
 #include "../include/algo/algo.hpp"
+#include "../include/writer/writer.hpp"
 #include <iostream>
 #include <filesystem>
 #include <vector>
@@ -54,18 +55,33 @@ int main(int argc, char** argv)
 	// sorted for better initial
 	input->sortBlock();
 
-	// dead space ratio need to run (can add more dead space ratio if needed)
-	std::vector<double> dead_space_ratios = {0.2, 0.15};
-	for(double &d : dead_space_ratios)
+	input->dead_space_ratio = 0.2;
+
+	WongLuiAlgo wl_algo(input.get());
+	Writer::ptr writer = wl_algo.solve();
+
+	// no valid solution
+	if(!writer)
 	{
-		input->dead_space_ratio = d;
-
-		WongLuiAlgo wl(input.get());
-		wl.initial();
-
-		std::cout << wl.isValid() << std::endl;
-		std::cout << "=================================" << std::endl;
+		std::cout << "No valid solution" << std::endl;
+		return 1;
 	}
+
+	auto t2 = time_clock::now();
+
+	writer->writeResult(file_name);
+
+	auto t3 = time_clock::now();
+
+	auto ms = [](auto d){
+		return std::chrono::duration<double, std::milli>(d).count();
+	};
+
+	std::string line(32, '-');
+	std::cout << line << std::endl;
+	std::cout << "Input time consume: " << ms(t1 - t0) << std::endl;
+	std::cout << "Algo time consume: " << ms(t2 - t1) << std::endl;
+	std::cout << "Output time consume: " << ms(t3 - t2) << std::endl;
 
 	return 0;
 }
