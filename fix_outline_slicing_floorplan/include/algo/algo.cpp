@@ -19,6 +19,46 @@ WongLuiAlgo::WongLuiAlgo(Input *input)
 	weight = 1e3;	// change if you want
 }
 
+std::vector<int> WongLuiAlgo::dfsNPE(int depth, int l, int r)
+{
+	if(l == r)
+	{
+		Node::ptr node = std::make_unique<Node>();
+		node->block = input->blocks[l].get();
+		node->update();
+
+		block_nodes.push_back(std::move(node));
+
+		std::vector<int> expr;
+		expr.push_back(l);
+
+		return expr;
+	}
+
+	int mid = l + (r - l)/2;
+	std::vector<int> left = dfsNPE(depth + 1, l, mid);
+	std::vector<int> right = dfsNPE(depth + 1, mid + 1, r);
+
+	left.insert(left.end(), right.begin(), right.end());
+
+	Node::ptr node = std::make_unique<Node>();
+
+	if(depth % 2)
+	{
+		left.push_back(-1);
+		node->type = Type::V_CUT;
+	}
+	else
+	{
+		left.push_back(-2);
+		node->type = Type::H_CUT;
+	}
+
+	cut_nodes.push_back(std::move(node));
+
+	return left;
+}
+
 std::vector<int> WongLuiAlgo::initialNPE()
 {
 	/*
@@ -27,120 +67,11 @@ std::vector<int> WongLuiAlgo::initialNPE()
 	 * output: NPE
 	 */
 
-	std::vector<int> expr;
-
 	// calculate limit
 	limit = sqrt(input->block_area * (1 + input->dead_space_ratio));
 
 	// initial NPE
-	Node::ptr node = std::make_unique<Node>();
-	node->block = input->blocks[0].get();
-	node->update();
-	
-	expr.push_back(0);
-	block_nodes.push_back(std::move(node));
-
-	int Width = 0, Height = 0;
-	for(int i = 1; i < input->blocks.size(); i++)
-	{
-		node = std::make_unique<Node>();
-
-		Block *block = input->blocks[i].get();
-		node->block = block;
-		node->update();
-
-		expr.push_back(i);
-		block_nodes.push_back(std::move(node));
-
-		int h = block->height, w = block->width;
-
-		int best = -1;
-		int p = INT_MAX, cur = INT_MAX;
-
-		// H_cut and not rotate
-		int h1 = Height + h;
-		int w1 = std::max(Width, w);
-		cur = (std::max(0, w1 - limit) + std::max(0, h1 - limit))*weight + std::abs(w1 - h1);
-		if(p > cur)
-		{
-			p = cur;
-			best = 1;
-		}
-
-		// V_cut and not rotate
-		int h2 = std::max(Height, h);
-		int w2 = Width + w;
-		cur = (std::max(0, w2 - limit) + std::max(0, h2 - limit))*weight + std::abs(w2 - h2);
-		if(p > cur)
-		{
-			p = cur;
-			best = 2;
-		}
-
-		// H_cut and rorate
-		int h3 = Height + w;
-		int w3 = std::max(Width, h);
-		cur = (std::max(0, w3 - limit) + std::max(0, h3 - limit))*weight + std::abs(w3 - h3);
-		if(p > cur)
-		{
-			p = cur;
-			best = 3;
-		}
-
-		// V_cut and rorate
-		int h4 = std::max(Height, w);
-		int w4 = Width + h;
-		cur = (std::max(0, w4 - limit) + std::max(0, h4 - limit))*weight + std::abs(w4 - h4);
-		if(p > cur)
-		{
-			p = cur;
-			best = 4;
-		}
-
-		// decide slicing way
-		if(best == 1 || best == 3)
-		{
-			node = std::make_unique<Node>();
-			node->type = Type::H_CUT;
-
-			if(best == 1)
-			{
-				Width = w1;
-				Height = h1;
-			}
-			else
-			{
-				Width = w3;
-				Height = h3;
-			}
-
-			expr.push_back(-2);
-		}
-		else
-		{
-			node = std::make_unique<Node>();
-			node->type = Type::V_CUT;
-
-			if(best == 2)
-			{
-				Width = w2;
-				Height = h2;
-			}
-			else
-			{
-				Width = w4;
-				Height = h4;
-			}
-
-			expr.push_back(-1);
-		}
-
-		std::cout << "w: " << w << ", h: " << h << std::endl;
-		std::cout << "W: " << Width << ", H: " << Height << std::endl;
-		std::cout << "============================================" << std::endl;
-
-		cut_nodes.push_back(std::move(node));
-	}
+	std::vector<int> expr = dfsNPE(0, 0, input->blocks.size() - 1);
 
 	return expr;
 }
@@ -288,6 +219,8 @@ std::vector<int> WongLuiAlgo::getCost(std::vector<int> &expr,
 			penalty = cur_penalty;
 		}
 	}
+
+	std::cout << penalty << std::endl;
 
 	int wl = 0;
 	if(wl_optimize)
@@ -482,7 +415,7 @@ Writer::ptr WongLuiAlgo::solve()
 		std::cout << "Find a valid floorplan first" << std::endl;
 
 		std::tie(expr, wl, penalty) = SA(expr,
-						 0.9,
+						 10,
 						 0.1,
 						 0.9,
 						 10,

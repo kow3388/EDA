@@ -17,6 +17,7 @@ private:
 	int limit;	// floorplan width & hegiht limit
 	int weight;	// for initial penalty weight
 	
+	std::vector<int> dfsNPE(int depth, int l, int r);	// dfs initial NPE
 	std::vector<int> initialNPE();
 	bool isValid(std::vector<int> &expr);	// is expr NPE
 	
