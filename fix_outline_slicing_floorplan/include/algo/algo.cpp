@@ -120,6 +120,7 @@ Node* WongLuiAlgo::buildTree(std::vector<int> &expr)
 		{
 			// is cut
 			Node *cur = cut_nodes[cut_idx++].get();
+			cur->type = e == -1 ? Type::V_CUT : Type::H_CUT;
 
 			Node *r = stk.back();
 			stk.pop_back();
@@ -290,9 +291,9 @@ std::vector<int> WongLuiAlgo::perturb(std::vector<int> &expr, int move_type)
 		for(int i = start_idx; i < start_idx + len; i++)
 		{
 			if(expr[i] == static_cast<int>(Type::H_CUT))
-				expr[i] = static_cast<int>(Type::V_CUT);
+				new_expr[i] = static_cast<int>(Type::V_CUT);
 			else
-				expr[i] = static_cast<int>(Type::H_CUT);
+				new_expr[i] = static_cast<int>(Type::H_CUT);
 		}
 	}
 	else
@@ -337,15 +338,17 @@ std::tuple<std::vector<int>, int, int> WongLuiAlgo::SA(std::vector<int> expr,
 	std::vector<int> best_expr = expr;
 	std::vector<int> all_cost = getCost(expr, wl_optimize);
 	int best_cost = all_cost[0];
-	int wl = all_cost[1];
-	int penalty = all_cost[2];
+	int best_wl = all_cost[1];
+	int best_penalty = all_cost[2];
 
 	// for a valid floorplan design first
-	if(!wl_optimize && penalty == 0)
-		return {best_expr, wl, penalty};
+	if(!wl_optimize && best_penalty == 0)
+		return {best_expr, best_wl, best_penalty};
 
 	double temperature = init_temperature;
 	int cur_cost = best_cost;
+	int cur_wl = best_wl;
+	int cur_penalty = best_penalty;
 
 	while(temperature >= end_temperature)
 	{
@@ -364,12 +367,9 @@ std::tuple<std::vector<int>, int, int> WongLuiAlgo::SA(std::vector<int> expr,
 			}
 
 			all_cost = getCost(new_expr, wl_optimize);
-			cur_cost = all_cost[0];
-			wl = all_cost[1];
-			penalty = all_cost[2];
 
 			// optimize wl but out of limit (not accept)
-			if(wl_optimize && penalty > 0)
+			if(wl_optimize && all_cost[2] > 0)
 				continue;
 
 			int diff_cost = all_cost[0] - cur_cost;
@@ -377,15 +377,19 @@ std::tuple<std::vector<int>, int, int> WongLuiAlgo::SA(std::vector<int> expr,
 			   static_cast<double>(rand())/RAND_MAX < exp(-diff_cost/temperature))
 			{
 				cur_cost = all_cost[0];
+				cur_wl = all_cost[1];
+				cur_penalty = all_cost[2];
 				expr = new_expr;
+
+				if(!wl_optimize && cur_penalty == 0)
+					return {expr, cur_wl, cur_penalty};
 
 				if(cur_cost < best_cost)
 				{
 					best_expr = expr;
 					best_cost = cur_cost;
-
-					if(!wl_optimize && penalty == 0)
-						return {best_expr, wl, penalty};
+					best_wl = cur_wl;
+					best_penalty = cur_penalty;
 				}
 			}
 		}
@@ -393,7 +397,7 @@ std::tuple<std::vector<int>, int, int> WongLuiAlgo::SA(std::vector<int> expr,
 		temperature *= cool_factor;
 	}
 
-	return {best_expr, wl, penalty};
+	return {best_expr, best_wl, best_penalty};
 }
 
 Writer::ptr WongLuiAlgo::solve()
@@ -415,7 +419,7 @@ Writer::ptr WongLuiAlgo::solve()
 		std::cout << "Find a valid floorplan first" << std::endl;
 
 		std::tie(expr, wl, penalty) = SA(expr,
-						 10,
+						 100,
 						 0.1,
 						 0.9,
 						 10,
