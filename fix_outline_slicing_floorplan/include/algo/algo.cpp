@@ -188,8 +188,8 @@ std::vector<int> WongLuiAlgo::getCost(std::vector<int> &expr,
 {
 	/*
 	 * get total cost
-	 * if wire length optimize: cost = alpha * wl + beta * area
-	 * else: cost = beta * area + gamma * penalty
+	 * if wire length optimize: cost = alpha * wl + beta * penalty
+	 * else: cost = beta * penalty
 	 * penalty = is W or H out of bound
 	 * 
 	 * input: NPE and is wire length optimize
@@ -198,42 +198,37 @@ std::vector<int> WongLuiAlgo::getCost(std::vector<int> &expr,
 
 	Node *root = buildTree(expr);
 
-	int alpha = 0, beta = 1, gamma = limit;
+	int alpha = 0, beta = limit;
 
 	// use area & penalty to decide which one left & right child
 	int cost = INT_MAX;
-	int area = 0, penalty = 0, choice = 0;
+	int penalty = 0, choice = 0;
 	for(int i = 0; i < root->records.size(); i++)
 	{
 		Record cur_record = root->records[i];
 		int w = cur_record.width, h = cur_record.height;
 
-		int cur_area = w * h - input->block_area;
 		int cur_penalty = std::max(0, w - limit) + std::max(0, h - limit);
-		int cur_cost = beta * cur_area + gamma * cur_penalty;
+		int cur_cost = beta * cur_penalty;
 
 		if(cost > cur_cost)
 		{
 			cost = cur_cost;
 			choice = i;
-			area = cur_area;
 			penalty = cur_penalty;
 		}
 	}
 
-	std::cout << penalty << std::endl;
-
 	int wl = 0;
 	if(wl_optimize)
 	{
-		alpha = 1, gamma = 0;
+		alpha = 1;
 		
 		setCoordinate(root, choice, 0, 0);
 		for(Net::ptr &net : input->nets)
 			wl += net->getWL();
 
-		int cur_cost = alpha * wl + beta * area;
-		cost = std::min(cost, cur_cost);
+		cost = alpha * wl + beta * penalty;
 	}
 
 	return {cost, wl, penalty};
@@ -355,7 +350,7 @@ std::tuple<std::vector<int>, int, int> WongLuiAlgo::SA(std::vector<int> expr,
 		for(int i = 0; i < max_try; i++)
 		{
 			// random select move
-			int move_type = rand() % 3;
+			int move_type = wl_optimize ? rand() % 3 : 0;
 
 			std::vector<int> new_expr = perturb(expr, move_type);
 
@@ -402,12 +397,16 @@ std::tuple<std::vector<int>, int, int> WongLuiAlgo::SA(std::vector<int> expr,
 
 Writer::ptr WongLuiAlgo::solve()
 {
+	// set random seed
+	int seed = 0;
+	srand(seed);
+
 	std::string line(32, '-');
 
 	std::cout << "Start initial slicing floorplan" << std::endl;
 	std::vector<int> expr = initialNPE();
 
-	std::vector<int> all_cost = getCost(expr, true);
+	std::vector<int> all_cost = getCost(expr, false);
 	int cost = all_cost[0], wl = all_cost[1], penalty = all_cost[2];
 	std::cout << line << std::endl;
 
@@ -419,10 +418,10 @@ Writer::ptr WongLuiAlgo::solve()
 		std::cout << "Find a valid floorplan first" << std::endl;
 
 		std::tie(expr, wl, penalty) = SA(expr,
-						 100,
+						 1000,
 						 0.1,
 						 0.9,
-						 10,
+						 100,
 						 false); 
 	}
 
@@ -434,21 +433,22 @@ Writer::ptr WongLuiAlgo::solve()
 	else
 		std::cout << "Find valid Slicing floorplan" << std::endl;
 
+	all_cost = getCost(expr, true);
+	std::cout << "Current wire length: " << all_cost[1] << std::endl;
 	std::cout << line << std::endl;
 	std::cout << "Start 2nd Sumulated Annealing" << std::endl;
 
 	std::tie(expr, wl, penalty) = SA(expr,
-					 10,
+					 100,
 					 0.1,
 					 0.9,
-					 5,
+					 50,
 					 true);
 
 
 	all_cost  = getCost(expr, true);
 	cost = all_cost[0], wl = all_cost[1], penalty = all_cost[2];
 
-	std::cout << line << std::endl;
 	std::cout << "Best wire length: " << wl << std::endl;
 
 	Writer::ptr writer = std::make_unique<Writer>();
