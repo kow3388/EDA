@@ -91,6 +91,8 @@ void Input::sortBlock()
 		  {
 		  	if(std::max(a->width, a->height) > std::max(b->width, b->height))
 				return true;
+			else if(std::max(a->width, a->height) < std::max(b->width, b->height))
+				return false;
 			else
 				return a->score > b->score;
 		  }
@@ -138,20 +140,17 @@ void Node::update()
 	}
 	else if(type == Type::H_CUT)
 	{
-		std::vector<Record> l_records = left->records;
-		std::vector<Record> r_records = right->records;
-
-		std::sort(l_records.begin(),
-			  l_records.end(),
+		std::sort(left->records.begin(),
+			  left->records.end(),
 			  [](Record &a, Record &b) { return a.width > b.width; });
-		std::sort(r_records.begin(),
-			  r_records.end(),
+		std::sort(right->records.begin(),
+			  right->records.end(),
 			  [](Record &a, Record &b) { return a.width > b.width; });
 
-		for(int l = 0, r = 0; l < l_records.size() && r < r_records.size();)
+		for(int l = 0, r = 0; l < left->records.size() && r < right->records.size();)
 		{
-			Record l_child = l_records[l];
-			Record r_child = r_records[r];
+			Record l_child = left->records[l];
+			Record r_child = right->records[r];
 
 			records.push_back(Record(std::max(l_child.width, r_child.width),
 					  	 l_child.height + r_child.height,
@@ -166,20 +165,17 @@ void Node::update()
 	}
 	else
 	{
-		std::vector<Record> l_records = left->records;
-		std::vector<Record> r_records = right->records;
-
-		std::sort(l_records.begin(),
-			  l_records.end(),
+		std::sort(left->records.begin(),
+			  left->records.end(),
 			  [](Record &a, Record &b) { return a.height > b.height; });
-		std::sort(r_records.begin(),
-			  r_records.end(),
+		std::sort(right->records.begin(),
+			  right->records.end(),
 			  [](Record &a, Record &b) { return a.height > b.height; });
 
-		for(int l = 0, r = 0; l < l_records.size() && r < r_records.size();)
+		for(int l = 0, r = 0; l < left->records.size() && r < right->records.size();)
 		{
-			Record l_child = l_records[l];
-			Record r_child = r_records[r];
+			Record l_child = left->records[l];
+			Record r_child = right->records[r];
 
 			records.push_back(Record(l_child.width + r_child.width,
 					  	 std::max(l_child.height, r_child.height),

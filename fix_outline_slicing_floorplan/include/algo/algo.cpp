@@ -161,6 +161,8 @@ void WongLuiAlgo::setCoordinate(Node *root, int choice, int x, int y)
 
 		if(w == record_h && h == record_w)
 			block->rotate = true;
+		else
+			block->rotate = false;
 
 		block->bottom_left = {x, y};
 	}
@@ -219,12 +221,13 @@ std::vector<int> WongLuiAlgo::getCost(std::vector<int> &expr,
 		}
 	}
 
+	setCoordinate(root, choice, 0, 0);
+
 	int wl = 0;
 	if(wl_optimize)
 	{
 		alpha = 1;
 		
-		setCoordinate(root, choice, 0, 0);
 		for(Net::ptr &net : input->nets)
 			wl += net->getWL();
 
@@ -421,7 +424,7 @@ Writer::ptr WongLuiAlgo::solve()
 						 1000,
 						 0.1,
 						 0.9,
-						 100,
+						 1000,
 						 false); 
 	}
 
@@ -439,10 +442,10 @@ Writer::ptr WongLuiAlgo::solve()
 	std::cout << "Start 2nd Sumulated Annealing" << std::endl;
 
 	std::tie(expr, wl, penalty) = SA(expr,
-					 100,
+					 1000,
 					 0.1,
 					 0.9,
-					 50,
+					 500,
 					 true);
 
 

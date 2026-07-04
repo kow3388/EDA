@@ -11,6 +11,22 @@ TARGET = main
 
 # Default empty
 CASE ?=
+RATIO ?=
+
+CASE_SET  := $(if $(strip $(CASE)),1,0)
+RATIO_SET := $(if $(strip $(RATIO)),1,0)
+
+# Require both CASE and RATIO, or neither.
+ifneq ($(CASE_SET)$(RATIO_SET),00)
+ifneq ($(CASE_SET)$(RATIO_SET),11)
+$(error Must provide both CASE and RATIO, or neither. Example: make run CASE=n200 RATIO=0.2)
+endif
+endif
+
+RUN_ARGS :=
+ifeq ($(CASE_SET)$(RATIO_SET),11)
+RUN_ARGS := $(CASE) $(RATIO)
+endif
 
 $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) $(OBJ) -o $(TARGET)
@@ -24,11 +40,7 @@ $(BUILD_DIR)/%.o: %.cpp
 .PHONY: run clean
 
 run: $(TARGET)
-	ifeq($(strip $(CASE)),)
-		./$(TARGET)
-	else
-		./$(TARGET) $(CASE)
-	endif
+	./$(TARGET) $(RUN_ARGS)
 
 clean:
 	rm -rf $(TARGET) $(BUILD_DIR)

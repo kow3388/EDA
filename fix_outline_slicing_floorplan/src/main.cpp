@@ -24,15 +24,32 @@ int main(int argc, char** argv)
 	Path net_file_path = "";
 	Path file_name = "";
 
+	double dead_space_ratio = 0.0;
+
 	if(argc == 1)
+	{
 		file_name = "n100";
-	else if(argc == 2)
+		dead_space_ratio = 0.2;
+	}
+	else if(argc == 3)
+	{
 		file_name = argv[1];
+		try
+		{
+			dead_space_ratio = std::stod(argv[2]);
+		}
+		catch (const std::exception &e)
+		{
+			std::cerr << "Invalid input" << argv[2] << std::endl;
+			return 1;
+		}
+	}
 	else
 	{
 		std::cout << "Usage: make run" << std::endl;
+		std::cout << "Usage: make run <file name> <dead space ratio>" << std::endl;
 		std::cout << "Usage: ./main" << std::endl;
-		std::cout << "Usage: ./main <file name>" << std::endl;
+		std::cout << "Usage: ./main <file name> <dead space ratio>" << std::endl;
 
 		return 1;
 	}
@@ -55,7 +72,7 @@ int main(int argc, char** argv)
 	// sorted for better initial
 	input->sortBlock();
 
-	input->dead_space_ratio = 0.2;
+	input->dead_space_ratio = dead_space_ratio;
 
 	WongLuiAlgo wl_algo(input.get());
 	Writer::ptr writer = wl_algo.solve();
