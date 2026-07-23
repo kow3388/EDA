@@ -6,6 +6,7 @@
 5. [Partition](https://github.com/kow3388/EDA/tree/main/partition)  
 6. [Floorplan](https://github.com/kow3388/EDA/tree/main/floorplanning)  
 7. [Placement](https://github.com/kow3388/EDA/tree/main/placement)  
+8. [Routing](https://github.com/kow3388/EDA/tree/main/routing)  
 
 # Practice Outline  
 1. [Two way min cut partition (Partition)](https://github.com/kow3388/EDA/tree/main/two_way_min_cut_parition)  
