@@ -179,3 +179,58 @@ Full-chip routing的核心概念就是global routing + detail routing
 在做uncoarsening時也會一邊修復失敗或是congestion的routing  
 ![multilevel routing](./img/multilevel_routing.png)  
 
+## Clock Routing Problem
+在了解CRP之前得先了解一些名詞  
+1. setup time  
+   在flip flop的clock到來之前，flip flop的data就必須提前準備好(電壓穩定)  
+   而必須提前多久準備好的時間就稱為setup time  
+
+2. hold time  
+   在flip flop的clock到來之後，flip flop的data還必須維持電壓一段時間才能讓flip flop正確吃到  
+   而必須維持的這段時間稱為hold time
+
+3. clock skew  
+   同一個clock因為flip flop位置不同，使得clock實際到不同位置的時間點不同  
+   而這個時間差稱為clock skew  
+
+![setup hold](./img/setup_hold.png)  
+![clock skew](./img/clock_skew.png)  
+
+CRP就是去做routing來達到clock可以同時抵達且clock dealy最小化  
+
+### H-Tree Based Algorithm
+把4個pin設成一個"H"型，這樣就可以確保clock到各點的時間接近  
+
+典型的演算法有Geometric matching algorithm, Method of Mean and Medium (MMM), ...
+![H tree](./img/H_tree.png)  
+
+### Exact Zero Skew Algorithm
+在介紹這個演算法前，要先了解RC delay   
+
+#### RC Delay
+RC delay是指當電流經過電阻( R ) 和電容( C ) 時，會需要充放電，因此不會立刻就讓電壓達到預期電位  
+而預期的時間和實際到達電位的時間差就是RC delay  
+
+那通常在描述RC的導線有三種模式: $\pi-model$, $T-model$ 和 $L-model$  
+![wire model](./img/wire_model.png)  
+
+在預估RC delay常用Elmore delay model來去預估  
+Elmore delay model是說delay會隨著wire length變長而平方的增加  
+因為對於任何resistor，它都會去要去charge後面的所有capacitors  
+如下圖$r_{1}$會看電容$c_{1}$到$c_{n}$ (紅框) ，而$r_{2}$會看電容$c_{2}$到$c_{n}$ (藍框)  
+因此可以得到delay公式如下  
+$\delta = \sum_{i=1}^{n} r_{i} \sum_{k=i}^{n} c_{k}$  
+$\delta = \sum_{i=1}^{n} r(n - i + 1)c$  
+$\delta = \frac{n(n + 1)}{2}rc$  
+![elmore delay](./img/elmore_delay.png)  
+
+要了上述的model，可以把建構一個clock tree來去計算任兩點的delay，如下圖  
+![clock tree](./img/clock_tree.png)  
+
+有了RC delay的概念後，就可以來講Exact Zero Skew Algorithm了  
+核心概念是利用RC delay找到一個***tapping point***來去抵銷clock skew所造成的時間差  
+演算法會根據skew時間差去計算出tapping point距離兩點間的距離比，假設一邊x另一邊就會是1-x  
+但是計算出來的x有可能會 > 1 or < 0，這表示skew的時間差非常imbalance  
+這時就會需要去做snaking (意思是刻意去繞路來去增加距離)  
+![snaking](./img/snaking.png)  
+
