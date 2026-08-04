@@ -9,7 +9,7 @@
 class Parser
 {
 private:
-	std::vector<Path> readAux(Path testcase_dir, Path file_path);
+	std::vector<Path> readAux(Path testcase_dir, Path file_path, Input *input);
 	void readNode(Path file_path, Input *input);
 	void readPl(Path file_path);
 	void readScl(Path file_path, Input *input);

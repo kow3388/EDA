@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_map>
+#include <utility>
 
 using Path = Parser::Path;
 
@@ -16,7 +17,7 @@ std::unordered_map<std::string, Cell*> blockage_mp;
 
 Parser::Parser() {}
 
-std::vector<Path> Parser::readAux(Path testcase_dir, Path file_path)
+std::vector<Path> Parser::readAux(Path testcase_dir, Path file_path, Input *input)
 {
 	// read aux file to get the file name we need
 	std::ifstream file(file_path);
@@ -36,6 +37,14 @@ std::vector<Path> Parser::readAux(Path testcase_dir, Path file_path)
 	ss >> _ >> _ >> node >> pl >> scl;
 
 	std::vector<Path> paths = {testcase_dir/node, testcase_dir/pl, testcase_dir/scl};
+
+	int max_displace = 0;
+
+	std::getline(file, line);
+	ss << line;
+	ss >> _ >> _ >> max_displace;
+
+	input->max_displace = max_displace;
 
 	return paths;
 }
@@ -192,7 +201,7 @@ void Parser::readScl(Path file_path, Input *input)
 		if(line.empty())
 			continue;
 	
-		Subrow::ptr row = std::make_unique<Subrow>();
+		Row::ptr row = std::make_unique<Row>();
 
 		// get row information
 		while(std::getline(file, line))
@@ -216,6 +225,7 @@ void Parser::readScl(Path file_path, Input *input)
 			{
 				ss >> _ >> x_left >> _ >> _ >> num;
 				row->x_left = x_left;
+				row->x_start = x_left;
 				row->x_right = x_left + width * (num + 1);
 			}
 			else
@@ -246,11 +256,14 @@ Input::ptr Parser::parseInput(Path case_name)
 	}
 
 	Path::file_path = testcase_dir / file_name;
-	std::vector<Path> paths = readAux(testcase_dir, file_path);
+	std::vector<Path> paths = readAux(testcase_dir, file_path, input);
 
 	readNode(paths[0], ipnut.get());
 	readPl(paths[1]);
 	readScl(paths[2], input.get());
+
+	input->width = input->rows[0]->width;
+	input->height = input->rows[0]->height;
 
 	return input;
 }
