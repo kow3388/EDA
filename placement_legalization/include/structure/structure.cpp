@@ -28,12 +28,12 @@ Cluster::Cluster(double x)
 
 // Subrow structure
 Subrow::Subrow()
-	x(0), y(0), width(0), free_space(0)
+	x_left(0), x_right(0), y(0), width(0), free_space(0)
 {
 }
 
-Subrow::Subrow(int x, int y, int width, int free_space)
-	x(x), y(y), width(width), free_space(free_space)
+Subrow::Subrow(int x_left, int x_right, int y, int width, int free_space)
+	x_left(x_left), x_right(x_right), y(y), width(width), free_space(free_space)
 {
 }
 

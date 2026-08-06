@@ -36,7 +36,8 @@ struct Subrow
 {
 	using ptr = std::unique_ptr<Subrow>;
 
-	int x;
+	int x_left;
+	int x_right;
 	int y;
 	int width;
 	int free_space;

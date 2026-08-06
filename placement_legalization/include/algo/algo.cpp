@@ -5,6 +5,7 @@
 #include "algo.hpp"
 #include <algorithm>
 #include <cmath>
+#include <climit>
 
 Abacus::Abacus(Input *input)
 {
@@ -30,7 +31,12 @@ void Abacus::preProcess()
 				input->rows[i]->x_start = std::max(input->rows[i]->x_start, blockage->x + blockage->width);
 			else
 			{
-				Subrow::ptr subrow = std::make_unique<Subrow>(input->rows[i]->x_start, input->rows[i]->y, input->width, blockage->x - input->rows[i]->x_start);
+				Subrow::ptr subrow = std::make_unique<Subrow>(input->rows[i]->x_start,
+									      blockage->x,
+									      input->rows[i]->y,
+									      input->width,
+									      blockage->x - input->rows[i]->x_start);
+
 				input->rows[i]->subrows.push_back(std::move(subrow));
 				input->rows[i]->x_start = blockage->x + blockage->width;
 			}
@@ -41,7 +47,11 @@ void Abacus::preProcess()
 	{
 		if(row->x_start < row->x_right)
 		{
-			Subrow::ptr subrow = std::make_unique<Subrow>(row->x_start, row->y, row->width, row->x_right - row->x_start);
+			Subrow::ptr subrow = std::make_unique<Subrow>(row->x_start,
+								      row->x_right,
+								      row->y,
+								      row->width,
+								      row->x_right - row->x_start);
 			row->subrows.push_back(std::move(subrow));
 			row->x_start = row->x_right;
 		}
@@ -87,6 +97,38 @@ double Abacus::getCost(Cell *cell)
 	double diff_y = cell->y - cell->y_global;
 
 	return std::sqrt(diff_x*diff_x + diff_y*diff_y);
+}
+
+int Abacus::getSubrowIndex(Row *row, Cell *cell)
+{
+	int x = cell->x, width = cell->width;
+
+	std::vector<int> candidate_idxs;
+	for(int i = 0; i < row->subrows.size(); i++)
+		if(row->subrows[i]->free_space >= width)
+			candidate_idxs.push_back(i);
+
+	int best_idx = -1, best_dist = INT_MAX;
+	for(int &idx : candidate_idxs)
+	{
+		int x_l = row->subrows[i]->x_left;
+		int x_r = row->subrows[i]->x_right;
+
+		// calculate cell & subrow distance
+		int cur_dist = 0;
+		if(x < x_l)
+			cur_dist = x_l - x;
+		else if(x > x_r - width)
+			cur_dist = x + width - x_r;
+
+		if(best_dist > cur_dist)
+		{
+			best_idx = idx;
+			best_dist = cur_dist;
+		}
+	}
+
+	return best_idx;
 }
 
 std::pair<int, double> Abacus::place(Row *row, Cell *cell)
