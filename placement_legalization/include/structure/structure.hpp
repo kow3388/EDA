@@ -29,7 +29,6 @@ struct Cluster
 	double width;
 	double weight;
 	double q;
-	std::vector<Cell*> cells;
 };
 
 struct Subrow
@@ -42,6 +41,7 @@ struct Subrow
 	int width;
 	int free_space;
 	std::vector<Cluster::ptr> stk;	// cluster stack
+	std::vector<Cell*> cells;
 };
 
 struct Row

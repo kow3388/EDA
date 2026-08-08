@@ -6,11 +6,11 @@
 #include <algorithm>
 #include <cmath>
 #include <climit>
+#include <limits>
 
 Abacus::Abacus(Input *input)
 {
 	this->input = input;
-	preProcess();
 }
 
 void Abacus::preProcess()
@@ -22,23 +22,23 @@ void Abacus::preProcess()
 
 	for(Cell::ptr &blockage : input->blocakges)
 	{
-		int y_start_idx = bsRowIndex(blockage->y);
-		int y_end_idx = bsRowIndex(blockage->y + blocakge->height);
+		int y_start_idx = bsRowIndex(blockage->y_global);
+		int y_end_idx = bsRowIndex(blockage->y_global + blocakge->height);
 
 		for(int i = y_start_idx; i < y_end_idx; i++)
 		{
-			if(input->rows[i]->x_start >= blockage->x)
-				input->rows[i]->x_start = std::max(input->rows[i]->x_start, blockage->x + blockage->width);
+			if(input->rows[i]->x_start >= blockage->x_global)
+				input->rows[i]->x_start = std::max(input->rows[i]->x_start, blockage->x_global + blockage->width);
 			else
 			{
 				Subrow::ptr subrow = std::make_unique<Subrow>(input->rows[i]->x_start,
-									      blockage->x,
+									      blockage->x_global,
 									      input->rows[i]->y,
 									      input->width,
-									      blockage->x - input->rows[i]->x_start);
+									      blockage->x_global - input->rows[i]->x_start);
 
 				input->rows[i]->subrows.push_back(std::move(subrow));
-				input->rows[i]->x_start = blockage->x + blockage->width;
+				input->rows[i]->x_start = blockage->x_global + blockage->width;
 			}
 		}
 	}
@@ -131,8 +131,128 @@ int Abacus::getSubrowIndex(Row *row, Cell *cell)
 	return best_idx;
 }
 
-std::pair<int, double> Abacus::place(Row *row, Cell *cell)
+std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 {
+	int subrow_idx = getSubrowIndex(row, cell);
+	Subrow *subrow = row->subrows[r].get();
+
+	double cell_x = cell->x_global;
+	if(cell_x < subrow->x_left)
+		cell_x = subrow->x_left;
+	else if(cell_x > subrow->x_right - cell->width)
+		cell_x = subrow->x_right - cell->width;
+
+	if(subrow->stk.empty() || subrow->stk.back()->x + subrow->stk.back()->width < cell_x)
+	{
+		cell->x = cell_x;
+		cell->y = row->y;
+	}
+	else
+	{
+		// weighted average
+		int i = subrow->stk.size() - 1;
+
+		double cluster_weight = subrow->stk[i]->weight + cell->weight;
+		double cluster_q = subrow->stk[i]->q + cell->wieght * (cell_x - cell->width);
+		double cluster_width = subrow->stk[i]->width + cell->width;
+
+		double cluster_x = 0.0;
+
+		for(i = subrow->stk.size() - 2; i >= 0; i--)
+		{
+			cluster_x = cluster_q / cluster_weight;
+
+			if(cluster_x < subrow->x_left)
+				clsuter_x = subrow->x_left;
+			else if(cluster_x > subrow->x_right - cluster_width)
+				cluster_x = subrow->x_right - cluster_width;
+
+			if(subrow->stk[i]->x + subrow->stk[i]->width < cluster_x)
+				break;
+
+			// merge cluster
+			cluster_weight += subrow->stk[i]->weight;
+			cluster_q += subrow->stk[i]->q;
+			cluster_width += subrow->stk[i]->width;
+		}
+
+		cluster_x = cluster_q / cluster_weight;
+		if(cluster_x < subrow->x_left)
+			clsuter_x = subrow->x_left;
+		else if(cluster_x > subrow->x_right - cluster_width)
+			cluster_x = subrow->x_right - cluster_width;
+
+		cell->x = cluster_x + cluster_width - cell->width;
+		cell->y = row->y;
+	}
+
+	double cost = getCost(cell);
+
+	return {subrow_idx, cost};
+}
+
+void Abacus::realPlace(Subrow *subrow, Cell *cell)
+{
+	subrow->cells.push_back(cell);
+
+	double cell_x = cell->x_global;
+	if(cell_x < subrow->x_left)
+		cell_x = subrow->x_left;
+	else if(cell_x > subrow->x_right - cell->width)
+		cell_x = subrow->x_right - cell->width;
+
+	if(subrow->stk.empty() || subrow->stk.back()->x + subrow->stk.back()->width < cell_x)
+	{
+		Cluster::ptr cluster = std::make_unique<Cluster>(cell_x, cell->width);
+		cluster->weight += cell->weight;
+		cluster->q += cell->weight * (cell_x - cell->width);
+		cluster->width += cell->width;
+
+		subrow->stk.push_back(std::move(cluster));
+	}
+	else
+	{
+		// weighted average
+		int n = subrow->stk.size();
+		int i = n - 1;
+
+		double cluster_weight = subrow->stk[i]->weight + cell->weight;
+		double cluster_q = subrow->stk[i]->q + cell->wieght * (cell_x - cell->width);
+		double cluster_width = subrow->stk[i]->width + cell->width;
+
+		double cluster_x = 0.0;
+
+		for(i = n - 2; i >= 0; i--)
+		{
+			cluster_x = cluster_q / cluster_weight;
+
+			if(cluster_x < subrow->x_left)
+				clsuter_x = subrow->x_left;
+			else if(cluster_x > subrow->x_right - cluster_width)
+				cluster_x = subrow->x_right - cluster_width;
+
+			if(subrow->stk[i]->x + subrow->stk[i]->width < cluster_x)
+				break;
+
+			// merge cluster
+			subrow->stk.pop_back();
+
+			cluster_weight += subrow->stk[i]->weight;
+			cluster_q += subrow->stk[i]->q;
+			cluster_width += subrow->stk[i]->width;
+		}
+
+		cluster_x = cluster_q / cluster_weight;
+		if(cluster_x < subrow->x_left)
+			clsuter_x = subrow->x_left;
+		else if(cluster_x > subrow->x_right - cluster_width)
+			cluster_x = subrow->x_right - cluster_width;	
+
+		subrow->stk.back()->x = cluster_x;
+		subrow->stk.back()->weight = cluster_weight;
+		subrow->stk.back()->q = cluster_q;
+		subrow->stk.back()->width = cluster_width;
+	}
 }
 
 void Abacus::process()
@@ -142,8 +262,40 @@ void Abacus::process()
 	for(Cell::ptr &cell : input->cells)
 	{
 		// get global placement row index
-		int r = bsRowIndex(cell->y, true);
+		int r = bsRowIndex(cell->y_global, true);
 
-		auto [subrow_idx, cost] = place(input->rows[r].get(), cell.get());
+
+		int best_row = -1, best_subrow = -1;
+		double best_cost = std::numeric_limits<double>::infinity();
+
+		// try to place row above
+		for(int i = r; i >= 0; i--)
+		{
+			auto [subrow_idx, cost] = place(input->rows[r].get(), cell.get());
+			if(cost < best_cost)
+			{
+				cost = best_cost;
+				best_row = i;
+				best_subrow = subrow_idx;
+			}
+			else
+				break;
+		}
+
+		// try to place row below
+		for(int i = r + 1; i < input->rows.size(); i++)
+		{
+			auto [subrow_idx, cost] = place(input->rows[r].get(), cell.get());
+			if(cost < best_cost)
+			{
+				cost = best_cost;
+				best_row = i;
+				best_subrow = subrow_idx;
+			}
+			else
+				break;
+		}
+
+		realPlace(input->rows[best_row]->subrows[best_subrow].get(), cell.get());
 	}
 }	
