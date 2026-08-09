@@ -19,6 +19,7 @@ private:
 	std::pair<int, double> testPlace(Row *row, Cell *cell);		// try to place cell in row return {subrow index, place cost}
 	void realPlace(Subrow *subrow, Cell *cell);			// real place cell in row
 	void process();							// abacus main algo
+	std::pair<double, double> calculateFinalResult();		// calculate the final coordidante of cell & placement cost, return {total cost, max cost}
 public:
 	Abacus(Input *input);
 	writer::ptr solve();

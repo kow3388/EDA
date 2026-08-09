@@ -193,7 +193,6 @@ std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 
 void Abacus::realPlace(Subrow *subrow, Cell *cell)
 {
-	subrow->cells.push_back(cell);
 
 	double cell_x = cell->x_global;
 	if(cell_x < subrow->x_left)
@@ -203,55 +202,54 @@ void Abacus::realPlace(Subrow *subrow, Cell *cell)
 
 	if(subrow->stk.empty() || subrow->stk.back()->x + subrow->stk.back()->width < cell_x)
 	{
-		Cluster::ptr cluster = std::make_unique<Cluster>(cell_x, cell->width);
+		Cluster::ptr cluster = std::make_unique<Cluster>(cell_x);
 		cluster->weight += cell->weight;
 		cluster->q += cell->weight * (cell_x - cell->width);
 		cluster->width += cell->width;
+		cluster->cells.push_back(cell);
 
 		subrow->stk.push_back(std::move(cluster));
 	}
 	else
 	{
 		// weighted average
-		int n = subrow->stk.size();
-		int i = n - 1;
+		int i = subrow->stk.size() - 1;
 
-		double cluster_weight = subrow->stk[i]->weight + cell->weight;
-		double cluster_q = subrow->stk[i]->q + cell->wieght * (cell_x - cell->width);
-		double cluster_width = subrow->stk[i]->width + cell->width;
+		subrow->stk[i]->weight += cell->weight;
+		subrow->stk[i]->q += cell->weight * (cell_x - cell->width);
+		subrow->stk[i]->width += cell->width;
+		subrow->stk[i]->x = subrow->stk[i]->q / subrow->stk[i]->weight;
 
-		double cluster_x = 0.0;
+		if(subrow->stk[i]->x < subrow->x_left)
+			subrow->stk[i]->x = subrow->x_left;
+		else if(subrow->stk[i]->x > subrow->x_right - subrow->stk[i]->width)
+			subrow->stk[i]->x = subrow->x_right - subrow->stk[i]->width;
 
-		for(i = n - 2; i >= 0; i--)
+		subrow->stk[i--]->cells.push_back(cell);
+
+		for(; i >= 0; i--)
 		{
-			cluster_x = cluster_q / cluster_weight;
 
-			if(cluster_x < subrow->x_left)
-				clsuter_x = subrow->x_left;
-			else if(cluster_x > subrow->x_right - cluster_width)
-				cluster_x = subrow->x_right - cluster_width;
-
-			if(subrow->stk[i]->x + subrow->stk[i]->width < cluster_x)
+			if(subrow->stk[i]->x + subrow->stk[i]->width < subrow->stk[i + 1]->x)
 				break;
 
 			// merge cluster
+			subrow->stk[i]->weight += subrow->stk[i + 1]->weight;
+			subrow->stk[i]->q += subrow->stk[i + 1]->q;
+			subrow->stk[i]->width += subrow->stk[i + 1]->width;
+			subrow->stk[i]->x = subrow->stk[i]->q / subrow->stk[i]->weight;
+
+			if(subrow->stk[i]->x < subrow->x_left)
+				subrow->stk[i]->x = subrow->x_left;
+			else if(sburow->stk[i]->x > subrow->x_right - subrow->stk[i]->width)
+				subrow->stk[i]->x = subrow->x_right - subrow->stk[i]->width;
+
+			subrow->stk[i]->cells.insert(subrow->stk[i]->cells.end(),
+						     subrow->stk[i + 1]->cells.begin(),
+						     subrow->stk[i + 1]->cells.end());
+
 			subrow->stk.pop_back();
-
-			cluster_weight += subrow->stk[i]->weight;
-			cluster_q += subrow->stk[i]->q;
-			cluster_width += subrow->stk[i]->width;
 		}
-
-		cluster_x = cluster_q / cluster_weight;
-		if(cluster_x < subrow->x_left)
-			clsuter_x = subrow->x_left;
-		else if(cluster_x > subrow->x_right - cluster_width)
-			cluster_x = subrow->x_right - cluster_width;	
-
-		subrow->stk.back()->x = cluster_x;
-		subrow->stk.back()->weight = cluster_weight;
-		subrow->stk.back()->q = cluster_q;
-		subrow->stk.back()->width = cluster_width;
 	}
 }
 
@@ -298,4 +296,64 @@ void Abacus::process()
 
 		realPlace(input->rows[best_row]->subrows[best_subrow].get(), cell.get());
 	}
-}	
+}
+
+std::pair<double, double> Abacus::calculateFinalResult()
+{
+	double total_cost = 0.0, max_cost = 0.0;
+	for(Row::ptr &row : input->rows)
+	{
+		for(Subrow::ptr &subrow : row->subrows)
+		{
+			for(Cluster::ptr &cluster : subrows->stk)
+			{
+				double x = std::rond(cluster->x);
+				for(Cell *cell : cluster->cells)
+				{
+					cell->x = x;
+					cell->y = row->y;
+
+					x += cell->width;
+
+					double cost = getCost(cell);
+					total_cost += cost;
+					max_cost = std::max(max_cost, cost);
+				}
+			}
+		}
+	}
+
+	return {total_cost, max_cost};
+}
+
+Writer::ptr Abacus::solve()
+{
+	std::string line(32, '-');
+
+	std::cout << "Start preprocess (divide row into subrow)" << std::endl;
+
+	preprocess();
+
+	std::cout << "Finish preprocess" << std::endl;
+	std::cout << "Start process (Abacus main algorithm)" << std::endl;
+
+	process();
+
+	std::cout << "Finish process" << std::endl;
+	std::cout << line << std::endl;
+	std::cout << "Abacus algorithm result" << std::endl;
+
+	auto [total_cost, max_cost] = calculateFinalResult();
+	std::cout << "Total displacement cost: " << total_cost << std::endl;
+	std::cout << "Max displacement cost: " << max_cost << std::endl;
+
+	Writer::ptr writer = std::make_unique<Writer>();
+
+	for(Cell::ptr &cell : input->cells)
+		writer->addCell(cell.get());
+
+	for(Cell::ptr &blockage : input->blockages)
+		writer->addBlockage(blockage.get());
+
+	return writer;
+}
