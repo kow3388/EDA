@@ -5,7 +5,7 @@
 #include "algo.hpp"
 #include <algorithm>
 #include <cmath>
-#include <climit>
+#include <climits>
 #include <limits>
 
 Abacus::Abacus(Input *input)

@@ -8,14 +8,15 @@
 
 class Parser
 {
-private:
-	std::vector<Path> readAux(Path testcase_dir, Path file_path, Input *input);
-	void readNode(Path file_path, Input *input);
-	void readPl(Path file_path);
-	void readScl(Path file_path, Input *input);
 public:
 	using Path = std::filesystem::path;
 
 	Parser();
 	Input::ptr parseInput(Path case_name);
+private:
+	std::string strip(const std::string& s) const;
+	std::vector<Path> readAux(Path testcase_dir, Path file_path, Input *input);
+	void readNode(Path file_path, Input *input);
+	void readPl(Path file_path);
+	void readScl(Path file_path, Input *input);
 };

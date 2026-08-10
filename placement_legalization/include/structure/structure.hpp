@@ -19,6 +19,9 @@ struct Cell
 	double weight;
 	int width;
 	int height;
+
+	Cell();
+	Cell(std::string name, int x_global, int y_global, int width, int height); 
 };
 
 struct Cluster
@@ -30,6 +33,9 @@ struct Cluster
 	double weight;
 	double q;
 	std::vector<Cell*> cells;
+
+	Cluster();
+	Cluster(double x);
 };
 
 struct Subrow
@@ -42,6 +48,9 @@ struct Subrow
 	int width;
 	int free_space;
 	std::vector<Cluster::ptr> stk;	// cluster stack
+	
+	Subrow();
+	Subrow(int x_left, int x_right, int y, int width, int free_space);
 };
 
 struct Row
@@ -55,6 +64,9 @@ struct Row
 	int width;
 	int x_start;
 	std::vector<Subrow> subrows;
+
+	Row();
+	Row(int x_left, int x_right, int y, int width, int height);
 };
 
 struct Input
@@ -65,6 +77,9 @@ struct Input
 	int width;
 	int max_displace;
 	std::vector<Cell::ptr> cells;
-	std::vector<Blockage::ptr> blockages;
-	std::vector<Subrow::ptr> rows;
+	std::vector<Cell::ptr> blockages;
+	std::vector<Row::ptr> rows;
+
+	Input();
+	Input(int width, int height);
 };

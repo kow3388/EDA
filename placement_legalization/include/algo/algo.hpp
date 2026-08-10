@@ -22,5 +22,5 @@ private:
 	std::pair<double, double> calculateFinalResult();		// calculate the final coordidante of cell & placement cost, return {total cost, max cost}
 public:
 	Abacus(Input *input);
-	writer::ptr solve();
+	Writer::ptr solve();
 };

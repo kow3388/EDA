@@ -8,6 +8,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <utility>
+#include <cctype>
 
 using Path = Parser::Path;
 
@@ -16,6 +17,21 @@ std::unordered_map<std::string, Cell*> cell_mp;
 std::unordered_map<std::string, Cell*> blockage_mp;
 
 Parser::Parser() {}
+
+std::string Parser::strip(const std::string& s) const
+{
+	int start = 0;
+	while(start < s.size() &&
+	      std::isspace(static_cast<unsigned char>(s[start])))
+		++start;
+
+	int end = s.size();
+	while(end > start &&
+	      std::isspace(static_cast<unsigned char>(s[end - 1])))
+		--end;
+
+	return s.substr(start, end - start);
+}
 
 std::vector<Path> Parser::readAux(Path testcase_dir, Path file_path, Input *input)
 {
@@ -106,7 +122,7 @@ void Parser::readNode(Path file_path, Input *input)
 	}
 }
 
-void Parser::readPl(Path file_name)
+void Parser::readPl(Path file_path)
 {
 	std::ifstream file(file_path);
 	if(!file.is_open())
@@ -241,7 +257,7 @@ Input::ptr Parser::parseInput(Path case_name)
 	Input::ptr input = std::make_unique<Input>();
 
 	Path input_dir = "testcase";
-	testcase_dir = input_dir / case_name;
+	Path testcase_dir = input_dir / case_name;
 
 	// find the file end with .aux
 	std::string ext = ".aux";
@@ -255,10 +271,10 @@ Input::ptr Parser::parseInput(Path case_name)
 		}
 	}
 
-	Path::file_path = testcase_dir / file_name;
-	std::vector<Path> paths = readAux(testcase_dir, file_path, input);
+	Path file_path = testcase_dir / file_name;
+	std::vector<Path> paths = readAux(testcase_dir, file_path, input.get());
 
-	readNode(paths[0], ipnut.get());
+	readNode(paths[0], input.get());
 	readPl(paths[1]);
 	readScl(paths[2], input.get());
 

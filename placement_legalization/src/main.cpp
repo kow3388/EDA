@@ -2,10 +2,11 @@
 // Author: YU-WEN WANG
 // Created: 2026-08-09
 
-#include "include/parser/parser.hpp"
-#include "include/structure/structure.hpp"
-#include "include/algo/algo.hpp"
-#include "include/writer/writer.hpp"
+#include "../include/parser/parser.hpp"
+#include "../include/structure/structure.hpp"
+#include "../include/algo/algo.hpp"
+#include "../include/writer/writer.hpp"
+#include <iostream>
 #include <chrono>
 
 using time_clock = std::chrono::steady_clock;
