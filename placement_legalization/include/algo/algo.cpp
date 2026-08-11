@@ -7,6 +7,7 @@
 #include <cmath>
 #include <climits>
 #include <limits>
+#include <iostream>
 
 Abacus::Abacus(Input *input)
 {
@@ -20,10 +21,10 @@ void Abacus::preProcess()
 	std::sort(input->rows.begin(), input->rows.end(), [](const Row::ptr &a, const Row::ptr &b) {return a->y < b->y;} );
 	std::sort(input->blockages.begin(), input->blockages.end(), [](const Cell::ptr &a, const Cell::ptr &b) {return a->x < b->x;} );
 
-	for(Cell::ptr &blockage : input->blocakges)
+	for(Cell::ptr &blockage : input->blockages)
 	{
 		int y_start_idx = bsRowIndex(blockage->y_global);
-		int y_end_idx = bsRowIndex(blockage->y_global + blocakge->height);
+		int y_end_idx = bsRowIndex(blockage->y_global + blockage->height);
 
 		for(int i = y_start_idx; i < y_end_idx; i++)
 		{
@@ -111,8 +112,8 @@ int Abacus::getSubrowIndex(Row *row, Cell *cell)
 	int best_idx = -1, best_dist = INT_MAX;
 	for(int &idx : candidate_idxs)
 	{
-		int x_l = row->subrows[i]->x_left;
-		int x_r = row->subrows[i]->x_right;
+		int x_l = row->subrows[idx]->x_left;
+		int x_r = row->subrows[idx]->x_right;
 
 		// calculate cell & subrow distance
 		int cur_dist = 0;
@@ -134,7 +135,7 @@ int Abacus::getSubrowIndex(Row *row, Cell *cell)
 std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 {
 	int subrow_idx = getSubrowIndex(row, cell);
-	Subrow *subrow = row->subrows[r].get();
+	Subrow *subrow = row->subrows[subrow_idx].get();
 
 	double cell_x = cell->x_global;
 	if(cell_x < subrow->x_left)
@@ -153,7 +154,7 @@ std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 		int i = subrow->stk.size() - 1;
 
 		double cluster_weight = subrow->stk[i]->weight + cell->weight;
-		double cluster_q = subrow->stk[i]->q + cell->wieght * (cell_x - cell->width);
+		double cluster_q = subrow->stk[i]->q + cell->weight * (cell_x - cell->width);
 		double cluster_width = subrow->stk[i]->width + cell->width;
 
 		double cluster_x = 0.0;
@@ -163,7 +164,7 @@ std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 			cluster_x = cluster_q / cluster_weight;
 
 			if(cluster_x < subrow->x_left)
-				clsuter_x = subrow->x_left;
+				cluster_x = subrow->x_left;
 			else if(cluster_x > subrow->x_right - cluster_width)
 				cluster_x = subrow->x_right - cluster_width;
 
@@ -178,7 +179,7 @@ std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 
 		cluster_x = cluster_q / cluster_weight;
 		if(cluster_x < subrow->x_left)
-			clsuter_x = subrow->x_left;
+			cluster_x = subrow->x_left;
 		else if(cluster_x > subrow->x_right - cluster_width)
 			cluster_x = subrow->x_right - cluster_width;
 
@@ -241,7 +242,7 @@ void Abacus::realPlace(Subrow *subrow, Cell *cell)
 
 			if(subrow->stk[i]->x < subrow->x_left)
 				subrow->stk[i]->x = subrow->x_left;
-			else if(sburow->stk[i]->x > subrow->x_right - subrow->stk[i]->width)
+			else if(subrow->stk[i]->x > subrow->x_right - subrow->stk[i]->width)
 				subrow->stk[i]->x = subrow->x_right - subrow->stk[i]->width;
 
 			subrow->stk[i]->cells.insert(subrow->stk[i]->cells.end(),
@@ -269,7 +270,7 @@ void Abacus::process()
 		// try to place row above
 		for(int i = r; i >= 0; i--)
 		{
-			auto [subrow_idx, cost] = place(input->rows[r].get(), cell.get());
+			auto [subrow_idx, cost] = testPlace(input->rows[r].get(), cell.get());
 			if(cost < best_cost)
 			{
 				cost = best_cost;
@@ -283,7 +284,7 @@ void Abacus::process()
 		// try to place row below
 		for(int i = r + 1; i < input->rows.size(); i++)
 		{
-			auto [subrow_idx, cost] = place(input->rows[r].get(), cell.get());
+			auto [subrow_idx, cost] = testPlace(input->rows[r].get(), cell.get());
 			if(cost < best_cost)
 			{
 				cost = best_cost;
@@ -305,9 +306,9 @@ std::pair<double, double> Abacus::calculateFinalResult()
 	{
 		for(Subrow::ptr &subrow : row->subrows)
 		{
-			for(Cluster::ptr &cluster : subrows->stk)
+			for(Cluster::ptr &cluster : subrow->stk)
 			{
-				double x = std::rond(cluster->x);
+				double x = std::round(cluster->x);
 				for(Cell *cell : cluster->cells)
 				{
 					cell->x = x;
@@ -332,7 +333,7 @@ Writer::ptr Abacus::solve()
 
 	std::cout << "Start preprocess (divide row into subrow)" << std::endl;
 
-	preprocess();
+	preProcess();
 
 	std::cout << "Finish preprocess" << std::endl;
 	std::cout << "Start process (Abacus main algorithm)" << std::endl;

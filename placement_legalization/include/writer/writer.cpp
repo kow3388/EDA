@@ -14,7 +14,7 @@ void Writer::addCell(Cell *cell)
 	isCells.push_back(true);
 }
 
-void Writer::addBlocakge(Cell *blockage)
+void Writer::addBlockage(Cell *blockage)
 {
 	names.push_back(blockage->name);
 	coordinates.push_back({blockage->x_global, blockage->y_global});
@@ -38,8 +38,8 @@ void Writer::writeResult(Path &file_name)
 	for(int i = 0; i < n; i++)
 	{
 		std::string name = names[i];
-		int x = coordinate[i].first;
-		int y = coordinate[i].second;
+		int x = coordinates[i].first;
+		int y = coordinates[i].second;
 		std::string type = isCells[i] ? "N" : "N /FIXED";
 
 		ofs << name << " " << x << " " << y << " : " << type << "\n";

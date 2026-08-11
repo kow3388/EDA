@@ -9,7 +9,7 @@
 class Writer
 {
 private:
-	std::vector<std::string> name;
+	std::vector<std::string> names;
 	std::vector<std::pair<int, int>> coordinates;
 	std::vector<bool> isCells;
 public:

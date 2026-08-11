@@ -16,34 +16,34 @@ Cell::Cell(std::string name, int x_global, int y_global, int width, int height):
 }
 
 // cluster structure
-Cluster::Cluster()
+Cluster::Cluster():
 	x(0.0), width(0.0), weight(0.0), q(0.0)
 {
 }
 
-Cluster::Cluster(double x)
+Cluster::Cluster(double x):
 	x(x), width(0.0), weight(0.0), q(0.0)
 {
 }
 
 // Subrow structure
-Subrow::Subrow()
+Subrow::Subrow():
 	x_left(0), x_right(0), y(0), width(0), free_space(0)
 {
 }
 
-Subrow::Subrow(int x_left, int x_right, int y, int width, int free_space)
+Subrow::Subrow(int x_left, int x_right, int y, int width, int free_space):
 	x_left(x_left), x_right(x_right), y(y), width(width), free_space(free_space)
 {
 }
 
 // Row structure
-Row::Row()
+Row::Row():
 	x_left(0), x_right(0), y(0), width(0), height(0), x_start(x_left)
 {
 }
 
-Row::Row(int x_left, int x_right, int y, int width, int height)
+Row::Row(int x_left, int x_right, int y, int width, int height):
 	x_left(x_left), x_right(x_right), y(y), width(width), height(height), x_start(x_left)
 {
 }

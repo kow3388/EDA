@@ -63,7 +63,7 @@ struct Row
 	int height;
 	int width;
 	int x_start;
-	std::vector<Subrow> subrows;
+	std::vector<Subrow::ptr> subrows;
 
 	Row();
 	Row(int x_left, int x_right, int y, int width, int height);
