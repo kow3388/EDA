@@ -10,7 +10,7 @@ Cell::Cell():
 {
 }
 
-Cell::Cell(std::string name, int x_global, int y_global, int width, int height):
+Cell::Cell(std::string name, double x_global, double y_global, int width, int height):
 	name(name), x_global(x_global), y_global(y_global), x(0.0), y(0.0), weight(1.0), width(width), height(height)
 {
 }

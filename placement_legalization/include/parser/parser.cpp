@@ -56,9 +56,13 @@ std::vector<Path> Parser::readAux(Path testcase_dir, Path file_path, Input *inpu
 
 	int max_displace = 0;
 
-	std::getline(file, line);
-	ss << line;
-	ss >> _ >> _ >> max_displace;
+	if(std::getline(file, line))
+	{
+		// Reset the stringstream before parsing the next line.
+		ss.clear();
+		ss.str(line);
+		ss >> _ >> _ >> max_displace;
+	}
 
 	input->max_displace = max_displace;
 
@@ -117,7 +121,7 @@ void Parser::readNode(Path file_path, Input *input)
 		else
 		{
 			input->cells.push_back(std::move(cell));
-			cell_mp[name] = input->blockages.back().get();
+			cell_mp[name] = input->cells.back().get();
 		}
 	}
 }
@@ -134,7 +138,6 @@ void Parser::readPl(Path file_path)
 	std::string line;
 
 	std::string name, _;
-	int x = 0, y = 0;
 
 	// read untile node name
 	while(std::getline(file, line))
@@ -159,22 +162,23 @@ void Parser::readPl(Path file_path)
 			continue;
 
 		std::stringstream ss(line);
+		double x = 0.0, y = 0.0;
 
-		ss >> name >> x >> y >> _;
+		ss >> name >> x >> y >> _ >> _;
 
 		// blockage
 		if(ss >> _)
 		{
 			Cell *blockage = blockage_mp[name];
-			blockage->x = x;
-			blockage->y = y;
+			blockage->x_global = x;
+			blockage->y_global = y;
 		}
 		// cell
 		else
 		{
 			Cell *cell = cell_mp[name];
-			cell->x = x;
-			cell->y = y;
+			cell->x_global = x;
+			cell->y_global = y;
 		}
 	}
 }
@@ -227,12 +231,17 @@ void Parser::readScl(Path file_path, Input *input)
 			ss >> str;
 			if(str == "CoreRow" || str == "Sitespacing" || str == "Siteorient" || str == "Sitesymmetry")
 				continue;
-			else if(str == "Corrdinate")
+			else if(str == "Height")
+			{
+				ss >> _ >> height;
+				row->height = height;
+			}
+			else if(str == "Coordinate")
 			{
 				ss >> _ >> y;
 				row->y = y;
 			}
-			else if(str == "SiteWidth")
+			else if(str == "Sitewidth")
 			{
 				ss >> _ >> width;
 				row->width = width;
@@ -261,17 +270,16 @@ Input::ptr Parser::parseInput(Path case_name)
 
 	// find the file end with .aux
 	std::string ext = ".aux";
-	Path file_name = "";
+	Path file_path = "";
 	for(const auto &e : std::filesystem::directory_iterator(testcase_dir))
 	{
 		if(e.is_regular_file() && e.path().extension() == ext)
 		{
-			file_name = e.path();
+			file_path = e.path();
 			break;
 		}
 	}
 
-	Path file_path = testcase_dir / file_name;
 	std::vector<Path> paths = readAux(testcase_dir, file_path, input.get());
 
 	readNode(paths[0], input.get());

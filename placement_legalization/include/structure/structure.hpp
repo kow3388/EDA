@@ -12,8 +12,8 @@ struct Cell
 	using ptr = std::unique_ptr<Cell>;
 
 	std::string name;
-	int x_global;
-	int y_global;
+	double x_global;
+	double y_global;
 	double x;
 	double y;
 	double weight;
@@ -21,7 +21,7 @@ struct Cell
 	int height;
 
 	Cell();
-	Cell(std::string name, int x_global, int y_global, int width, int height); 
+	Cell(std::string name, double x_global, double y_global, int width, int height); 
 };
 
 struct Cluster

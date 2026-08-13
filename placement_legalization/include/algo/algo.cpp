@@ -19,7 +19,7 @@ void Abacus::preProcess()
 	const int n = input->rows.size();
 
 	std::sort(input->rows.begin(), input->rows.end(), [](const Row::ptr &a, const Row::ptr &b) {return a->y < b->y;} );
-	std::sort(input->blockages.begin(), input->blockages.end(), [](const Cell::ptr &a, const Cell::ptr &b) {return a->x < b->x;} );
+	std::sort(input->blockages.begin(), input->blockages.end(), [](const Cell::ptr &a, const Cell::ptr &b) {return a->x_global < b->x_global;} );
 
 	for(Cell::ptr &blockage : input->blockages)
 	{
@@ -29,7 +29,7 @@ void Abacus::preProcess()
 		for(int i = y_start_idx; i < y_end_idx; i++)
 		{
 			if(input->rows[i]->x_start >= blockage->x_global)
-				input->rows[i]->x_start = std::max(input->rows[i]->x_start, blockage->x_global + blockage->width);
+				input->rows[i]->x_start = std::max(input->rows[i]->x_start, static_cast<int>(blockage->x_global) + blockage->width);
 			else
 			{
 				Subrow::ptr subrow = std::make_unique<Subrow>(input->rows[i]->x_start,
@@ -59,7 +59,7 @@ void Abacus::preProcess()
 	}
 }
 
-int Abacus::bsRowIndex(int y, bool find_cell)
+int Abacus::bsRowIndex(double y, bool find_cell)
 {
 	const int n = input->rows.size();
 
@@ -84,7 +84,7 @@ int Abacus::bsRowIndex(int y, bool find_cell)
 			return l - 1;
 		else
 		{
-			if(std::abs(input->rows[l]->y - y) >= std::abs(input->rows[l - 1]->y - y))
+			if(l > 0 && std::abs(input->rows[l]->y - y) >= std::abs(input->rows[l - 1]->y - y))
 				return l - 1;
 			else
 				return l;
@@ -102,7 +102,8 @@ double Abacus::getCost(Cell *cell)
 
 int Abacus::getSubrowIndex(Row *row, Cell *cell)
 {
-	int x = cell->x, width = cell->width;
+	double x = cell->x_global;
+	int width = cell->width;
 
 	std::vector<int> candidate_idxs;
 	for(int i = 0; i < row->subrows.size(); i++)
@@ -135,6 +136,10 @@ int Abacus::getSubrowIndex(Row *row, Cell *cell)
 std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 {
 	int subrow_idx = getSubrowIndex(row, cell);
+
+	if(subrow_idx == -1)
+		return {-1, std::numeric_limits<double>::infinity()};
+
 	Subrow *subrow = row->subrows[subrow_idx].get();
 
 	double cell_x = cell->x_global;
@@ -143,7 +148,7 @@ std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 	else if(cell_x > subrow->x_right - cell->width)
 		cell_x = subrow->x_right - cell->width;
 
-	if(subrow->stk.empty() || subrow->stk.back()->x + subrow->stk.back()->width < cell_x)
+	if(subrow->stk.empty() || subrow->stk.back()->x + subrow->stk.back()->width <= cell_x)
 	{
 		cell->x = cell_x;
 		cell->y = row->y;
@@ -154,7 +159,7 @@ std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 		int i = subrow->stk.size() - 1;
 
 		double cluster_weight = subrow->stk[i]->weight + cell->weight;
-		double cluster_q = subrow->stk[i]->q + cell->weight * (cell_x - cell->width);
+		double cluster_q = subrow->stk[i]->q + cell->weight * (cell_x - subrow->stk[i]->width);
 		double cluster_width = subrow->stk[i]->width + cell->width;
 
 		double cluster_x = 0.0;
@@ -172,8 +177,8 @@ std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 				break;
 
 			// merge cluster
+			cluster_q = subrow->stk[i]->q + cluster_q - cluster_weight * subrow->stk[i]->width;
 			cluster_weight += subrow->stk[i]->weight;
-			cluster_q += subrow->stk[i]->q;
 			cluster_width += subrow->stk[i]->width;
 		}
 
@@ -195,17 +200,19 @@ std::pair<int, double> Abacus::testPlace(Row *row, Cell *cell)
 void Abacus::realPlace(Subrow *subrow, Cell *cell)
 {
 
+	subrow->free_space -= cell->width;
+
 	double cell_x = cell->x_global;
 	if(cell_x < subrow->x_left)
 		cell_x = subrow->x_left;
 	else if(cell_x > subrow->x_right - cell->width)
 		cell_x = subrow->x_right - cell->width;
 
-	if(subrow->stk.empty() || subrow->stk.back()->x + subrow->stk.back()->width < cell_x)
+	if(subrow->stk.empty() || subrow->stk.back()->x + subrow->stk.back()->width <= cell_x)
 	{
 		Cluster::ptr cluster = std::make_unique<Cluster>(cell_x);
 		cluster->weight += cell->weight;
-		cluster->q += cell->weight * (cell_x - cell->width);
+		cluster->q += cell->weight * cell_x;
 		cluster->width += cell->width;
 		cluster->cells.push_back(cell);
 
@@ -217,7 +224,7 @@ void Abacus::realPlace(Subrow *subrow, Cell *cell)
 		int i = subrow->stk.size() - 1;
 
 		subrow->stk[i]->weight += cell->weight;
-		subrow->stk[i]->q += cell->weight * (cell_x - cell->width);
+		subrow->stk[i]->q += cell->weight * (cell_x - subrow->stk[i]->width);
 		subrow->stk[i]->width += cell->width;
 		subrow->stk[i]->x = subrow->stk[i]->q / subrow->stk[i]->weight;
 
@@ -236,7 +243,7 @@ void Abacus::realPlace(Subrow *subrow, Cell *cell)
 
 			// merge cluster
 			subrow->stk[i]->weight += subrow->stk[i + 1]->weight;
-			subrow->stk[i]->q += subrow->stk[i + 1]->q;
+			subrow->stk[i]->q += subrow->stk[i + 1]->q - subrow->stk[i + 1]->weight * subrow->stk[i]->width;
 			subrow->stk[i]->width += subrow->stk[i + 1]->width;
 			subrow->stk[i]->x = subrow->stk[i]->q / subrow->stk[i]->weight;
 
@@ -256,7 +263,7 @@ void Abacus::realPlace(Subrow *subrow, Cell *cell)
 
 void Abacus::process()
 {
-	std::sort(input->cells.begin(), input->cells.end(), [](const Cell::ptr &a, const Cell::ptr &b) {return a->x < b->x;} );
+	std::sort(input->cells.begin(), input->cells.end(), [](const Cell::ptr &a, const Cell::ptr &b) {return a->x_global < b->x_global;} );
 
 	for(Cell::ptr &cell : input->cells)
 	{
@@ -270,10 +277,12 @@ void Abacus::process()
 		// try to place row above
 		for(int i = r; i >= 0; i--)
 		{
-			auto [subrow_idx, cost] = testPlace(input->rows[r].get(), cell.get());
+			auto [subrow_idx, cost] = testPlace(input->rows[i].get(), cell.get());
+			if(subrow_idx < 0 || !std::isfinite(cost))
+				continue;
 			if(cost < best_cost)
 			{
-				cost = best_cost;
+				best_cost = cost;
 				best_row = i;
 				best_subrow = subrow_idx;
 			}
@@ -284,16 +293,21 @@ void Abacus::process()
 		// try to place row below
 		for(int i = r + 1; i < input->rows.size(); i++)
 		{
-			auto [subrow_idx, cost] = testPlace(input->rows[r].get(), cell.get());
+			auto [subrow_idx, cost] = testPlace(input->rows[i].get(), cell.get());
+			if(subrow_idx < 0 || !std::isfinite(cost))
+				continue;
 			if(cost < best_cost)
 			{
-				cost = best_cost;
+				best_cost = cost;
 				best_row = i;
 				best_subrow = subrow_idx;
 			}
 			else
 				break;
 		}
+
+		if(best_row < 0 || best_subrow < 0)
+			continue;
 
 		realPlace(input->rows[best_row]->subrows[best_subrow].get(), cell.get());
 	}
@@ -304,11 +318,46 @@ std::pair<double, double> Abacus::calculateFinalResult()
 	double total_cost = 0.0, max_cost = 0.0;
 	for(Row::ptr &row : input->rows)
 	{
+		const int base = row->x_left;   // SubrowOrigin
+		const int sitew = row->width;  // Sitewidth
+
 		for(Subrow::ptr &subrow : row->subrows)
 		{
 			for(Cluster::ptr &cluster : subrow->stk)
 			{
-				double x = std::round(cluster->x);
+				// Snap cluster start to the row's site grid: base + k * sitew.
+				// Keep the snapped position within the feasible subrow range.
+				const int cluster_w = static_cast<int>(std::lround(cluster->width));
+				const int min_x = subrow->x_left;
+				const int max_x = subrow->x_right - cluster_w;
+
+				double x0 = cluster->x;
+				if(x0 < min_x)
+					x0 = min_x;
+				else if(x0 > max_x)
+					x0 = max_x;
+
+				auto snap_nearest = [&](double x) -> int {
+					int k = static_cast<int>(std::lround((x - base) / static_cast<double>(sitew)));
+					return base + k * sitew;
+				};
+				auto snap_up = [&](double x) -> int {
+					int k = static_cast<int>(std::ceil((x - base) / static_cast<double>(sitew)));
+					return base + k * sitew;
+				};
+				auto snap_down = [&](double x) -> int {
+					int k = static_cast<int>(std::floor((x - base) / static_cast<double>(sitew)));
+					return base + k * sitew;
+				};
+
+				int x = (sitew > 0) ? snap_nearest(x0) : static_cast<int>(std::lround(x0));
+				if(sitew > 0)
+				{
+					if(x < min_x)
+						x = snap_up(min_x);
+					if(x > max_x)
+						x = snap_down(max_x);
+				}
 				for(Cell *cell : cluster->cells)
 				{
 					cell->x = x;

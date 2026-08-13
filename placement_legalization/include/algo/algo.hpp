@@ -13,7 +13,7 @@ private:
 	Input *input;
 
 	void preProcess();						// divide all row in to subrow due to blockages
-	int bsRowIndex(int y, bool find_cell=false);			// binary search find the cell & blockage's row
+	int bsRowIndex(double y, bool find_cell=false);			// binary search find the cell & blockage's row
 	double getCost(Cell *cell);					// calculate the move cost
 	int getSubrowIndex(Row *row, Cell *cell);			// get the subrow index by giving row & cell
 	std::pair<int, double> testPlace(Row *row, Cell *cell);		// try to place cell in row return {subrow index, place cost}
