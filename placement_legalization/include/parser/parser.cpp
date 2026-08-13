@@ -251,7 +251,7 @@ void Parser::readScl(Path file_path, Input *input)
 				ss >> _ >> x_left >> _ >> _ >> num;
 				row->x_left = x_left;
 				row->x_start = x_left;
-				row->x_right = x_left + width * (num + 1);
+				row->x_right = x_left + width * num;
 			}
 			else
 				break;
