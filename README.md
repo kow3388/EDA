@@ -11,3 +11,4 @@
 # Practice Outline  
 1. [Two way min cut partition (Partition)](https://github.com/kow3388/EDA/tree/main/two_way_min_cut_parition)  
 2. [Fix outline slicing floorplan (Floorplan)](https://github.com/kow3388/EDA/tree/main/fix_outline_slicing_floorplan)  
+3. [Placement legalization (Placement)](https://github.com/kow3388/EDA/tree/main/placement_legalization)  
