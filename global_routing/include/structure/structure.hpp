@@ -7,14 +7,7 @@
 #include <utility>
 #include <vector>
 #include <memory>
-
-struct Edge
-{
-	int capacity;
-	int demand;
-
-	Edge();
-};
+#include <unordered_set>
 
 struct Net
 {
@@ -22,15 +15,32 @@ struct Net
 
 	std::string name;
 	int id;
+	int overflow;
+	int wl;
 	std::vector<std::pair<int, int>> pins;
 	std::vector<std::pair<int, int>> path;
 
 	Net();
 	Net(std::string name, int id);
+	bool operator()(const Net *a, const Net *b);
+};
+
+struct Edge
+{
+	int capacity;
+	int demand;
+	int history;
+	std::unordered_set<Net*> nets;
+
+	Edge();
+	Edge(int capacity);
+	bool operator()(const Edge *a, const Edge *b);
 };
 
 enum class Direction
 {
+	empty = -1,
+	stop = 0,
 	up = 1,
 	left = 2,
 	down = 3,

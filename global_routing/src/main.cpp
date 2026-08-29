@@ -4,6 +4,8 @@
 
 #include "../include/parser/parser.hpp"
 #include "../include/structure/structure.hpp"
+#include "../include/algo/algo.hpp"
+#include "../include/writer/writer.hpp"
 #include <filesystem>
 #include <iostream>
 #include <chrono>
@@ -38,6 +40,26 @@ int main(int argc, char** argv)
 	Input::ptr input = parser.parseInput(file_path);
 
 	auto t1 = time_clock::now();
+
+	A_Star A_star_search(input.get());
+	Writer::ptr writer = A_star_search.solve();
+
+	auto t2 = time_clock::now();
+
+	writer->writeResult(file_name);
+
+	auto t3 = time_clock::now();
+
+	auto ms = [](auto d){
+		return std::chrono::duration<double, std::milli>(d).count();
+	};
+
+	std::string line(32, '-');
+
+	std::cout << line << std::endl;
+	std::cout << "Input time consume: " << ms(t1 - t0) << std::endl;
+	std::cout << "Algo time consume: " << ms(t2 - t1) << std::endl;
+	std::cout << "Output time consume: " << ms(t3 - t2) << std::endl;
 
 	return 0;
 }
