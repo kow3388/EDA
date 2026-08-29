@@ -34,7 +34,7 @@ void Parser::readTxt(const Path &file_path, Input *input)
 		{
 			int r_size = 0, c_size = 0;
 
-			ss >> name >> r_size >> c_size;
+			ss >> name >> c_size >> r_size;
 
 			input->r_size = r_size;
 			input->c_size = c_size;

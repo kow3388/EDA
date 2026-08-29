@@ -5,13 +5,21 @@
 #pragma once
 #include "../structure/structure.hpp"
 #include "../writer/writer.hpp"
+#include <filesystem>
 #include <vector>
 #include <tuple>
 #include <queue>
 
 class A_Star
 {
+public:
+	using Path = std::filesystem::path;
+
+	A_Star(Input *input, Path file_name);
+	Writer::ptr solve();
+
 private:
+	Path file_name;
 	Input *input;
 	int r_size, c_size;
 	std::vector<int> dir;
@@ -32,7 +40,4 @@ private:
 	int getOverflow();
 	std::priority_queue<Edge*, std::vector<Edge*>, Edge> getRipupNet();
 	void ripupRerout(std::unordered_set<Net*> nets);
-public:
-	A_Star(Input *input);
-	Writer::ptr solve();
 };

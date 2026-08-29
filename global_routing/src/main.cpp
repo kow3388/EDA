@@ -41,7 +41,7 @@ int main(int argc, char** argv)
 
 	auto t1 = time_clock::now();
 
-	A_Star A_star_search(input.get());
+	A_Star A_star_search(input.get(), file_name);
 	Writer::ptr writer = A_star_search.solve();
 
 	auto t2 = time_clock::now();
